@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-$files = array('Worker', 'Console', 'FetchHandler', 'RenderHandler');
+$files = array('Worker', 'Console', 'FetchHandler', 'RenderHandler', 'ConvertHandler');
 $directoryHome = 'Classes/Client';
 
 $content = '';
