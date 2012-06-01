@@ -67,7 +67,7 @@ class FetchHandler {
 
 		print ('Implementation is coming...');
 		exit();
-		
+
 		$this->checkEnvironment();
 
 		// Computes command to be run
@@ -128,7 +128,7 @@ EOF;
 	 */
 	protected function displayUsage() {
 		$message = <<< EOF
-Fetch
+Download files related to documentation
 
 Usage:
 	get-the-docs fetch pdf (options)            download the PDF version
