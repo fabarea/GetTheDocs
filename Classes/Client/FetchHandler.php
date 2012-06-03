@@ -1,9 +1,4 @@
 <?php
-/*                                                                        *
- * This script belongs to the PLEASE package                              *
- * https://github.com/gebruederheitz/PLEASE                               *
- *                                                                        */
-
 /**
  * Worker class to make the job done!
  */
@@ -127,12 +122,12 @@ EOF;
 	 * @return void
 	 */
 	protected function displayUsage() {
+	#get-the-docs fetch pdf (options)            download the PDF version
+	#get-the-docs fetch html (options)           download the HTML version
 		$message = <<< EOF
 Download files related to documentation
 
 Usage:
-	get-the-docs fetch pdf (options)            download the PDF version
-	get-the-docs fetch html (options)           download the HTML version
 	get-the-docs fetch configuration (options)  download the necessary files for generating the docs locally
 
 Options:

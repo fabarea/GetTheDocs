@@ -1,16 +1,7 @@
 <?php
-
-// @todo
-#$this->generateConf();
-#$this->generateMake();
-#$this->build();
+namespace Server;
 
 class RenderHandler {
-
-	/**
-	 * @var string
-	 */
-	protected $source = '';
 
 	/**
 	 * @var string
@@ -20,7 +11,32 @@ class RenderHandler {
 	/**
 	 * @var string
 	 */
-	protected $docsDirectory = '';
+	protected $homeDirectory = '';
+
+	/**
+	 * @var string
+	 */
+	protected $userDirectory = '';
+
+	/**
+	 * @var string
+	 */
+	protected $buildDirectory = '';
+
+	/**
+	 * @var string
+	 */
+	protected $warningsFile = '';
+
+	/**
+	 * @var string
+	 */
+	protected $extensionName = '';
+
+	/**
+	 * @var string
+	 */
+	protected $extensionVersion = '';
 
 	/**
 	 * @var string
@@ -36,21 +52,30 @@ class RenderHandler {
 	 * Constructor
 	 */
 	public function __construct() {
-
-		$this->check();
+		// Configuration
 		$uploadDirectory = 'upload';
 		$filesDirectory = 'files';
-		$this->settings['archive'] = $_FILES['archive']['name'];
+
+		// Get file name value without extension
+		$fileNameWithExtension = $_FILES['archive']['name'];
+		$fileInfo = pathinfo($fileNameWithExtension);
+		$fileName = $fileInfo['filename'];
+
+		$this->extensionName = $fileName;
+		$this->extensionVersion = '1.0';
+
+		// Get user workspace
 		$username = !empty($_POST['username']) ? $_POST['username'] : '';
 
-		$this->url = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+		#$identifier = str_shuffle(uniqid(TRUE)); // not used for now... possible random number
 
-		#$identifier = str_shuffle(uniqid(TRUE));
-		$fileInfo = pathinfo($this->settings['archive']);
-		$fileName = $fileInfo['filename'];
-		$this->uploadDirectory = $uploadDirectory . '/' . $username . '/';
-		$this->source = $this->uploadDirectory . '/' . $fileName;
-		$this->docsDirectory = $filesDirectory . '/' . $username . '/';
+		// Computes property
+		$this->homeDirectory = dirname($_SERVER['SCRIPT_FILENAME']);
+		$this->userDirectory = "$uploadDirectory/$username";
+		$this->uploadDirectory = "$uploadDirectory/$username/$fileName";
+		$this->buildDirectory = "$filesDirectory/$username/$fileName";
+		$this->warningsFile = "$this->uploadDirectory/Warnings.txt";
+		$this->url = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 	}
 
 	/**
@@ -58,11 +83,39 @@ class RenderHandler {
 	 *
 	 * @return void
 	 */
-	public function process() {
+	public function work() {
+		$this->check();
 		$this->prepare();
-		#$this->unPack();
+		$this->unPack();
+		$this->renderDocs();
+		$this->displayFeedback();
 		$this->cleanUp();
-		$this->feedback();
+	}
+
+	/**
+	 * Check that the value is correct
+	 *
+	 * @return void
+	 */
+	public function renderDocs() {
+
+		// Generate configuration files
+		$view = new \Template('Resources/Template/conf.py');
+		$view->set('version', $this->extensionVersion);
+		$view->set('extensionName', $this->extensionName);
+		$content = $view->fetch();
+		file_put_contents($this->uploadDirectory . '/conf.py', $content);
+
+		$view = new \Template('Resources/Template/Makefile');
+		$view->set('buildDirectory', "$this->homeDirectory/$this->buildDirectory");
+		$content = $view->fetch();
+		file_put_contents($this->uploadDirectory . '/Makefile', $content);
+
+
+		$commands = array();
+		$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make clean --quiet; make html --quiet";
+
+		\Console::execute($commands);
 	}
 
 	/**
@@ -85,12 +138,14 @@ class RenderHandler {
 	 * @return void
 	 */
 	public function prepare() {
+		$directories = array($this->uploadDirectory, $this->buildDirectory);
+		foreach ($directories as $directory) {
+			if (!is_dir($directory)) {
+				$result = mkdir($directory, 0755, TRUE);
 
-		if (!is_dir($this->uploadDirectory)) {
-			$result = mkdir($this->uploadDirectory, 0755, TRUE);
-
-			if ($result === FALSE) {
-				throw new Exception('Exception: directory not created on the server "' . $this->uploadDirectory . '"');
+				if ($result === FALSE) {
+					throw new Exception('Exception: directory not created on the server "' . $directory . '"');
+				}
 			}
 		}
 	}
@@ -101,8 +156,7 @@ class RenderHandler {
 	 * @return void
 	 */
 	public function unPack() {
-
-		$zip = new ZipArchive();
+		$zip = new \ZipArchive();
 		$res = $zip->open($_FILES['archive']['tmp_name']);
 		if ($res === TRUE) {
 			$zip->extractTo($this->uploadDirectory);
@@ -119,7 +173,7 @@ class RenderHandler {
 	 */
 	public function cleanUp() {
 		// Remove directory
-		rrmdir($this->uploadDirectory);
+		\File::removeDirectory($this->userDirectory);
 	}
 
 	/**
@@ -127,38 +181,34 @@ class RenderHandler {
 	 *
 	 * @return void
 	 */
-	public function feedback() {
+	public function displayFeedback() {
 
-		$directory = $this->docsDirectory;
-		$url = $this->url;
+//Download HTML version:
+//
+//Download PDF:
+
+		$warnings = '';
+		if (file_exists($this->warningsFile)) {
+			$warnings = "Following warnings have been detected:\n";
+			$warnings .= file_get_contents($this->warningsFile);
+
+
+		}
+
 		$content = <<< EOF
 
-Documentation has been gerenated succesfully!
+Documentation has been generated successfully!
 
 Read documentation on-line:
-$url$directory
+{$this->url}{$this->buildDirectory}
 
-Download HTML:
-$this->url{$this->uploadDirectory}
+Notice the link is valid for a limited period of time.
 
-Download PDF:
-
-Notice the link is valid for a limited period of time (not defined yet how many days we keep the docs!).
+$warnings
 EOF;
 
 		print $content;
 	}
-}
-
-# recursively remove a directory
-function rrmdir($dir) {
-	foreach (glob($dir . '/*') as $file) {
-		if (is_dir($file))
-			rrmdir($file);
-		else
-			unlink($file);
-	}
-	rmdir($dir);
 }
 
 ?>

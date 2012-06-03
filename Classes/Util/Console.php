@@ -1,9 +1,4 @@
 <?php
-/*                                                                        *
- * This script belongs to the PLEASE package                              *
- * https://github.com/gebruederheitz/PLEASE                               *
- *                                                                        */
-
 /**
  * Console helper
  */

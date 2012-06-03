@@ -1,9 +1,4 @@
 <?php
-/*                                                                        *
- * This script belongs to the PLEASE package                              *
- * https://github.com/gebruederheitz/PLEASE                               *
- *                                                                        */
-
 /**
  * Worker class to make the job done!
  */
@@ -22,7 +17,12 @@ class RenderHandler {
 	/**
 	 * @var boolean
 	 */
-	protected $verbose = FALSE;
+	protected $debug = FALSE;
+
+	/**
+	 * @var boolean
+	 */
+	#protected $verbose = FALSE;
 
 	/**
 	 * The arguments from the console
@@ -44,22 +44,16 @@ class RenderHandler {
 			$this->documentationDirectory = $this->directory . '/Documentation';
 		}
 
-//		if (!empty($this->arguments[1])) {
-//			$target = rtrim($this->arguments[1], '/');
-//			$this->target = BASE_PATH . '/' . $target;
-//			$this->databaseTarget = str_replace(array('/', '-', '.'), '_', $target);
-//
-//			$targetParts = explode('/', $this->arguments[1]);
-//			$targetParts = array_reverse($targetParts);
-//			$this->domainTarget = implode('.', $targetParts);
-//		}
-
-		if (isset($this->arguments['v']) || isset($this->arguments['verbose'])) {
-			$this->verbose = TRUE;
-		}
+		#if (isset($this->arguments['v']) || isset($this->arguments['verbose'])) {
+		#	$this->verbose = TRUE;
+		#}
 
 		if (isset($this->arguments['d']) || isset($this->arguments['dry-run'])) {
 			Console::$dryRun = TRUE;
+		}
+
+		if (isset($this->arguments['debug'])) {
+			$this->debug = TRUE;
 		}
 
 		if (isset($this->arguments['v']) || isset($this->arguments['verbose'])) {
@@ -81,7 +75,7 @@ class RenderHandler {
 		$extensionName = basename($this->directory);
 		$tmpFile = '/tmp/' . $extensionName . '.zip';
 		$commands[] = 'echo "Generating archive..."';
-		$commands[] = "cd $this->directory; zip -rq $tmpFile . --include Documentation/\*.rst";
+		$commands[] = "cd $this->directory; zip -rq $tmpFile . --include \*.rst";
 
 		// Add possible images into the Zip
 		if (is_dir("$this->directory/Documentation/Images/")) {
@@ -94,7 +88,16 @@ class RenderHandler {
 		}
 		$commands[] = 'echo "Sending to server..."';
 		$host = rtrim(HOST, '/');
-		$commands[] = "curl -k -s -F archive=@" . $tmpFile . " -F 'username=" . USERNAME . ";type=text/foo' " . $host . '/';
+
+		$options = array();
+		$options[] = "-F archive=@" . $tmpFile;
+		$options[] = "-F 'username=" . USERNAME . ";type=text/foo'";
+		$options[] = "-F 'action=render;type=text/foo'";
+		if ($this->debug) {
+			$options[] = "-F 'debug=1;type=text/foo'";
+		}
+
+		$commands[] = "curl -k -s " . implode(' ', $options). " $host/";
 		$commands[] = "rm -f " . $tmpFile;
 
 		// Execute commands
@@ -107,7 +110,6 @@ class RenderHandler {
 	protected function checkEnvironment() {
 
 		// Test if directory given as input is correct
-
 		if (! is_dir($this->directory)) {
 			$this->displayError("directory does not exist! Make sure to give a valid path \"" . $this->directory . '"');
 		}
@@ -138,6 +140,7 @@ EOF;
 	 * @return void
 	 */
 	protected function displayUsage() {
+	#-v, --verbose          Increase verbosity
 		$message = <<< EOF
 Render documentation on-line
 
@@ -147,7 +150,6 @@ Usage:
 	where "PATH" points to TYPO3 extension
 
 Options:
-	-v, --verbose          Increase verbosity
 	-d, --dry-run          Output command that are going to be executed but don't run them
 	-h, --help             Display this help message
 
