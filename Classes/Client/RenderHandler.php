@@ -97,7 +97,7 @@ class RenderHandler {
 			$options[] = "-F 'debug=1;type=text/foo'";
 		}
 
-		$commands[] = "curl -k -s " . implode(' ', $options). " $host/";
+		$commands[] = CURL . " -k -s " . implode(' ', $options). " $host/";
 		$commands[] = "rm -f " . $tmpFile;
 
 		// Execute commands

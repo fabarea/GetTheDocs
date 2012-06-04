@@ -9,9 +9,9 @@
 
 // @todo code an HTML version for http://preview.docs.typo3.org/getthedocs
 // @todo add some conversation with the User to generate a file containing the information below
-define('USERNAME', 'john');
+define('USERNAME', 'anonymous');
 define('HOST', 'preview.docs.typo3.org/getthedocs');
-#define('HOST', 'getthedocs.typo3.fab');
+define('CURL', '/usr/bin/curl');
 
 try {
 	$dispatcher = new Dispatcher();
