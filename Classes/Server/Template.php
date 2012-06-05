@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This class is a very basic template engine
  * Source : http://www.massassi.com/php/articles/template_engines/

@@ -1,7 +1,6 @@
 <?php
-namespace Server;
 
-class RenderHandler {
+class RenderAgent {
 
 	/**
 	 * @var string
@@ -100,13 +99,13 @@ class RenderHandler {
 	public function renderDocs() {
 
 		// Generate configuration files
-		$view = new \Template('Resources/Template/conf.py');
+		$view = new Template('Resources/Template/conf.py');
 		$view->set('version', $this->extensionVersion);
 		$view->set('extensionName', $this->extensionName);
 		$content = $view->fetch();
 		file_put_contents($this->uploadDirectory . '/conf.py', $content);
 
-		$view = new \Template('Resources/Template/Makefile');
+		$view = new Template('Resources/Template/Makefile');
 		$view->set('buildDirectory', "$this->homeDirectory/$this->buildDirectory");
 		$content = $view->fetch();
 		file_put_contents($this->uploadDirectory . '/Makefile', $content);
@@ -115,7 +114,7 @@ class RenderHandler {
 		$commands = array();
 		$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make clean --quiet; make html --quiet";
 
-		\Console::execute($commands);
+		Command::execute($commands);
 	}
 
 	/**
@@ -173,7 +172,7 @@ class RenderHandler {
 	 */
 	public function cleanUp() {
 		// Remove directory
-		\File::removeDirectory($this->userDirectory);
+		File::removeDirectory($this->userDirectory);
 	}
 
 	/**

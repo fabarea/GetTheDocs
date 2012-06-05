@@ -23,7 +23,7 @@ catch (Exception $e) {
 
 <?php echo "?>" ?>
 <?php
-$files = array('Client/Dispatcher', 'Util/Console', 'Client/FetchHandler', 'Client/RenderHandler', 'Client/ConvertHandler');
+$files = array('Client/Dispatcher', 'Client/Console', 'Client/FetchHandler', 'Client/RenderHandler', 'Client/ConvertHandler');
 $directoryHome = 'Classes';
 
 $content = '';
