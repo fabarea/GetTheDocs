@@ -1,4 +1,9 @@
 <?php
+/*                                                                        *
+ * This script belongs to the PLEASE package                              *
+ * https://github.com/gebruederheitz/PLEASE                               *
+ *                                                                        */
+
 /**
  * Worker class to make the job done!
  */
@@ -65,6 +70,22 @@ class ConvertHandler {
 
 		$this->checkEnvironment();
 
+		// Computes command to be run
+		$extensionName = basename($this->directory);
+		$tmpFile = '/tmp/' . $extensionName . '.zip';
+		$commands[] = 'echo "Generating archive..."';
+		$commands[] = "zip -rq $tmpFile $this->directory --include $this->documentationDirectory/\*.rst";
+		$commands[] = "zip -rq $tmpFile $this->directory --include $this->documentationDirectory/Images/*";
+
+		// Add also ext_emconf.php to extract data from there
+		if (is_file("$this->directory/ext_emconf.php")) {
+			$commands[] = "zip -rq $tmpFile $this->directory --include $this->directory/ext_emconf.php";
+		}
+		$commands[] = 'echo "Sending to server..."';
+		$host = rtrim(HOST, '/');
+		$commands[] = "curl -k -s -F archive=@" . $tmpFile . " -F 'username=" . USERNAME . ";type=text/foo' " . $host . '/';
+		$commands[] = "rm -f " . $tmpFile;
+
 		// Execute commands
 		Console::execute($commands);
 	}
@@ -75,13 +96,14 @@ class ConvertHandler {
 	protected function checkEnvironment() {
 
 		// Test if directory given as input is correct
-//		if (! is_dir($this->directory)) {
-//			$this->displayError("directory does not exist! Make sure to give a valid path \"" . $this->directory . '"');
-//		}
-//
-//		if (!is_dir($this->documentationDirectory)) {
-//			$this->displayError("documentation folder does not exist! Are you sure it is a TYPO3 extension? Path wanted: \"" . $this->documentationDirectory . '"');
-//		}
+
+		if (! is_dir($this->directory)) {
+			$this->displayError("directory does not exist! Make sure to give a valid path \"" . $this->directory . '"');
+		}
+
+		if (!is_dir($this->documentationDirectory)) {
+			$this->displayError("documentation folder does not exist! Are you sure it is a TYPO3 extension? Path wanted: \"" . $this->documentationDirectory . '"');
+		}
 	}
 
 	/**
@@ -106,10 +128,10 @@ EOF;
 	 */
 	protected function displayUsage() {
 		$message = <<< EOF
-Con
+Convert legacy OpenOffice documentation to reST
 
 Usage:
-	get-the-docs convert PATH            convert manual.sxw to reST documentation
+	get-the-docs convert manual.sxw
 
 Options:
 	-d, --dry-run          Output command that are going to be executed but don't run them

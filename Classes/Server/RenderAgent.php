@@ -40,7 +40,22 @@ class RenderAgent {
 	/**
 	 * @var string
 	 */
+	protected $fileName = '';
+
+	/**
+	 * @var string
+	 */
 	protected $url = '';
+
+	/**
+	 * @var string
+	 */
+	protected $archive = '';
+
+	/**
+	 * @var array
+	 */
+	protected $formats = array();
 
 	/**
 	 * @var array
@@ -58,9 +73,9 @@ class RenderAgent {
 		// Get file name value without extension
 		$fileNameWithExtension = $_FILES['archive']['name'];
 		$fileInfo = pathinfo($fileNameWithExtension);
-		$fileName = $fileInfo['filename'];
+		$this->fileName = $fileInfo['filename'];
 
-		$this->extensionName = $fileName;
+		$this->extensionName = $this->fileName;
 		$this->extensionVersion = '1.0';
 
 		// Get user workspace
@@ -71,10 +86,22 @@ class RenderAgent {
 		// Computes property
 		$this->homeDirectory = dirname($_SERVER['SCRIPT_FILENAME']);
 		$this->userDirectory = "$uploadDirectory/$username";
-		$this->uploadDirectory = "$uploadDirectory/$username/$fileName";
-		$this->buildDirectory = "$filesDirectory/$username/$fileName";
+		$this->uploadDirectory = "$uploadDirectory/$username/$this->fileName";
+		$this->buildDirectory = "$filesDirectory/$username/$this->fileName";
 		$this->warningsFile = "$this->uploadDirectory/Warnings.txt";
 		$this->url = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+
+		// Define rendered formats
+		$formats = explode(',', $_POST['format']);
+		foreach ($formats as $format) {
+			if (in_array($format, array('html', 'json', 'gettext'))) {
+				$this->formats[] = $format;
+			}
+		}
+		// Define whether to zip
+		if ($_POST['archive'] == 'zip') {
+			$this->archive = 'zip';
+		}
 	}
 
 	/**
@@ -110,9 +137,17 @@ class RenderAgent {
 		$content = $view->fetch();
 		file_put_contents($this->uploadDirectory . '/Makefile', $content);
 
-
 		$commands = array();
-		$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make clean --quiet; make html --quiet";
+		// First clean directory
+		$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make clean --quiet;";
+
+		foreach ($this->formats as $format) {
+			$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make $format --quiet;";
+		}
+
+		if ($this->archive == 'zip') {
+			$commands[] = "cd $this->homeDirectory/$this->buildDirectory/..; zip -qr $this->fileName.zip $this->fileName";
+		}
 
 		Command::execute($commands);
 	}
@@ -182,27 +217,35 @@ class RenderAgent {
 	 */
 	public function displayFeedback() {
 
-//Download HTML version:
-//
-//Download PDF:
+		$rendered = '';
+		foreach ($this->formats as $format) {
+			if ($format == 'html') {
+				$rendered .= "HTML documentation:\n";
+				$rendered .= "$this->url$this->buildDirectory\n\n";
+			} elseif ($format == 'json') {
+				$rendered .= "JSON documentation:\n";
+				$rendered .= "$this->url$this->buildDirectory/json\n\n";
+			} elseif ($format == 'gettext') {
+				$rendered .= "GetText documentation:\n";
+				$rendered .= "$this->url$this->buildDirectory/local\n\n";
+			}
+		}
+
+		if ($this->archive == 'zip') {
+			$rendered .= "Zip archive to download:\n";
+			$rendered .= "$this->url$this->buildDirectory.zip\n\n";
+		}
 
 		$warnings = '';
 		if (file_exists($this->warningsFile)) {
 			$warnings = "Following warnings have been detected:\n";
 			$warnings .= file_get_contents($this->warningsFile);
-
-
 		}
 
 		$content = <<< EOF
 
-Documentation has been generated successfully!
-
-Read documentation on-line:
-{$this->url}{$this->buildDirectory}
-
-Notice the link is valid for a limited period of time.
-
+$rendered
+Notice, the docs is kept on-line for a limited time (few days)!
 $warnings
 EOF;
 

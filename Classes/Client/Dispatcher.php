@@ -55,13 +55,12 @@ EOF;
 	 * @return void
 	 */
 	public function displayUsage() {
-	#get-the-docs convert  Convert legacy OpenOffice documentation to reST
-	#get-the-docs fetch    Download files related to documentation
 		$usage = <<< EOF
 Toolbox for managing TYPO3 documentation
 
 Usage:
-	get-the-docs render   Render documentation on-line
+	get-the-docs render     Render documentation remotely
+	get-the-docs convert    Convert legacy OpenOffice documentation to reST (Not yet implemented)
 EOF;
 		print $usage;
 		die();

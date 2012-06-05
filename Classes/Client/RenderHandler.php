@@ -20,9 +20,21 @@ class RenderHandler {
 	protected $debug = FALSE;
 
 	/**
+	 * @var string
+	 */
+	protected $archive = '';
+
+	/**
 	 * @var boolean
 	 */
 	#protected $verbose = FALSE;
+
+	/**
+	 * The formats
+	 *
+	 * @var array
+	 */
+	protected $formats = array();
 
 	/**
 	 * The arguments from the console
@@ -59,6 +71,26 @@ class RenderHandler {
 		if (isset($this->arguments['v']) || isset($this->arguments['verbose'])) {
 			Console::$verbose = TRUE;
 		}
+
+		if (isset($this->arguments['json'])) {
+			$this->formats[] = 'json';
+		}
+
+		if (isset($this->arguments['gettext'])) {
+			$this->formats[] = 'gettext';
+		}
+
+		if (isset($this->arguments['pdf'])) {
+			$this->formats[] = 'pdf';
+		}
+
+		if (isset($this->arguments['html']) || empty($this->formats)) {
+			$this->formats[] = 'html';
+		}
+
+		if (isset($this->arguments['zip'])) {
+			$this->archive = 'zip';
+		}
 	}
 
 	/**
@@ -79,7 +111,7 @@ class RenderHandler {
 
 		// Add possible images into the Zip
 		if (is_dir("$this->directory/Documentation/Images/")) {
-			$commands[] = "cd $this->directory; zip -rq $tmpFile . --include Documentation/Images/*";
+			$commands[] = "cd $this->directory; zip -rq $tmpFile . --include Documentation/Images/**";
 		}
 
 		// Add also ext_emconf.php to use as source of information on the server
@@ -93,6 +125,8 @@ class RenderHandler {
 		$options[] = "-F archive=@" . $tmpFile;
 		$options[] = "-F 'username=" . USERNAME . ";type=text/foo'";
 		$options[] = "-F 'action=render;type=text/foo'";
+		$options[] = "-F 'format=" . implode(',', $this->formats) . ";type=text/foo'";
+		$options[] = "-F 'archive=$this->archive;type=text/foo'";
 		if ($this->debug) {
 			$options[] = "-F 'debug=1;type=text/foo'";
 		}
@@ -145,13 +179,19 @@ EOF;
 Render documentation on-line
 
 Usage:
-	get-the-docs render PATH
+	get-the-docs render PATH [OPTIONS]
 
 	where "PATH" points to TYPO3 extension
 
 Options:
-	-d, --dry-run          Output command that are going to be executed but don't run them
-	-h, --help             Display this help message
+	--html                  Render a HTML version (implicit option if no other format option given)
+	--json                  Render a JSON version
+	--gettext               Render a GetText version
+	--pdf                   Render a PDF version (not yet implemented!)
+	--zip                   Make a ZIP of the generated documentation
+	--fetch                 Download what has been rendered (not yet implemented!)
+	-d, --dry-run           Output command that are going to be executed but don't run them
+	-h, --help              Display this help message
 
 EOF;
 		Console::output($message);
