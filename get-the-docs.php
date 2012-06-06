@@ -10,7 +10,7 @@
 // @todo code an HTML version for http://preview.docs.typo3.org/getthedocs
 // @todo add some conversation with the User to generate a file containing the information below
 define('USERNAME', 'anonymous');
-define('HOST', 'preview.docs.typo3.org/getthedocs');
+define('HOST', 'http://preview.docs.typo3.org/getthedocs/');
 define('CURL', '/usr/bin/curl');
 
 try {
@@ -23,7 +23,7 @@ catch (Exception $e) {
 
 <?php echo "?>" ?>
 <?php
-$files = array('Client/Dispatcher', 'Client/Console', 'Client/FetchHandler', 'Client/RenderHandler', 'Client/ConvertHandler');
+$files = array('Client/Dispatcher', 'Client/Console', 'Client/ConfigHandler', 'Client/RenderHandler', 'Client/ConvertHandler');
 $directoryHome = 'Classes';
 
 $content = '';

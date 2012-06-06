@@ -1,8 +1,4 @@
 <?php
-/*                                                                        *
- * This script belongs to the PLEASE package                              *
- * https://github.com/gebruederheitz/PLEASE                               *
- *                                                                        */
 
 /**
  * Worker class to make the job done!

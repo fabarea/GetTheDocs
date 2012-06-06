@@ -113,7 +113,7 @@ class RenderAgent {
 		$this->check();
 		$this->prepare();
 		$this->unPack();
-		$this->renderDocs();
+		$this->render();
 		$this->displayFeedback();
 		$this->cleanUp();
 	}
@@ -123,7 +123,7 @@ class RenderAgent {
 	 *
 	 * @return void
 	 */
-	public function renderDocs() {
+	protected function render() {
 
 		// Generate configuration files
 		$view = new Template('Resources/Template/conf.py');
@@ -157,7 +157,7 @@ class RenderAgent {
 	 *
 	 * @return void
 	 */
-	public function check() {
+	protected function check() {
 		if (empty($_FILES['archive']) ||
 			$_FILES['archive']['error'] != 0 ||
 			$_POST['username'] == ''
@@ -171,7 +171,7 @@ class RenderAgent {
 	 *
 	 * @return void
 	 */
-	public function prepare() {
+	protected function prepare() {
 		$directories = array($this->uploadDirectory, $this->buildDirectory);
 		foreach ($directories as $directory) {
 			if (!is_dir($directory)) {
@@ -189,7 +189,7 @@ class RenderAgent {
 	 *
 	 * @return void
 	 */
-	public function unPack() {
+	protected function unPack() {
 		$zip = new \ZipArchive();
 		$res = $zip->open($_FILES['archive']['tmp_name']);
 		if ($res === TRUE) {
@@ -205,7 +205,7 @@ class RenderAgent {
 	 *
 	 * @return void
 	 */
-	public function cleanUp() {
+	protected function cleanUp() {
 		// Remove directory
 		File::removeDirectory($this->userDirectory);
 	}
@@ -215,7 +215,7 @@ class RenderAgent {
 	 *
 	 * @return void
 	 */
-	public function displayFeedback() {
+	protected function displayFeedback() {
 
 		$rendered = '';
 		foreach ($this->formats as $format) {

@@ -1,6 +1,6 @@
 <?php
 
-if (strpos($_SERVER['HTTP_USER_AGENT'], 'curl') !== FALSE) {
+if (strpos($_SERVER['HTTP_USER_AGENT'], 'curl') !== FALSE || strpos($_SERVER['HTTP_USER_AGENT'], 'PHP/') !== FALSE) {
 	try {
 		// Add possible debug flag
 		if (isset($_POST['debug']) && $_POST['debug'] == 1) {
@@ -12,6 +12,9 @@ if (strpos($_SERVER['HTTP_USER_AGENT'], 'curl') !== FALSE) {
 		switch($action) {
 			case 'render':
 				$agent = new RenderAgent();
+				break;
+			case 'config':
+					$agent = new ConfigAgent();
 				break;
 			default:
 				$message = <<< EOF
