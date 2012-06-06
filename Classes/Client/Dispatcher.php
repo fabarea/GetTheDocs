@@ -61,7 +61,7 @@ Toolbox for managing TYPO3 documentation
 Usage:
 	get-the-docs render     Render documentation remotely
 	get-the-docs convert    Convert legacy OpenOffice documentation to reST (Not yet implemented)
-	get-the-docs config     Download configuration for local rendering (Working but incomplete implementation)
+	get-the-docs config     Download configuration for local rendering (Working but still missing features...)
 	get-the-docs help       Print this help
 EOF;
 		print $usage;

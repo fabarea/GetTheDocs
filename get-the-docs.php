@@ -23,15 +23,10 @@ catch (Exception $e) {
 
 <?php echo "?>" ?>
 <?php
-$files = array('Client/Dispatcher', 'Client/Console', 'Client/ConfigHandler', 'Client/RenderHandler', 'Client/ConvertHandler');
-$directoryHome = 'Classes';
-
+// Fetch content from files
 $content = '';
-foreach ($files as $file) {
-	$filePath = $directoryHome . '/' . $file . '.php';
-	if (is_file($filePath)) {
-		$content .= file_get_contents($directoryHome . '/' . $file . '.php');
-	}
+foreach (glob('Classes/Client/*') as $file) {
+	$content .= file_get_contents($file);
 }
 
 print $content;
