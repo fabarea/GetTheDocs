@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8">
+	<title>get.typo3.org</title>
+	<style type="text/css">
+		html, body {
+		}
+
+		fieldset {
+			border: 0 solid #000000;
+		}
+	</style>
+</head>
+<body style="width: 700px">
+<h1>TYPO3 Documentation Service</h1>
+
+<p>
+	Documentation of the TYPO3 is written in reStructuredText format. The reStructuredText (frequently abbreviated as reST) is a
+	lightweight markup language intended to be highly readable in source format. By the means of processors, reST
+	documentation can be rendered into various formats for printing or screen,
+	such as PDF, ePub, HTML...
+</p>
+
+
+<h2>Command line tool</h2>
+
+<p>
+	In a "zero config" effort, the <a href="http://forge.typo3.org/projects/team-docteam">Doc Team</a> is providing a command line
+	tool aiming to render documentation on-line without the need to install the whole build chain.
+</p>
+
+<h3>Installation</h3>
+
+<p>
+	Download <a href="http://forge.typo3.org/projects/team-docteam">the script</a> somewhere in your system. On a *nix system, it
+	can be achieved from the command line with:
+<pre>
+	cd PATH
+	curl -s http://preview.docs.typo3.org/getthedocs/get-the-docs.php > get-the-docs;
+	chmod 755 get-the-docs
+</pre>
+<p>
+	<span style="text-decoration: underline">Tip</span>: putting the script somewhere in your PATH (e.g /usr/bin/) would make the
+	command recognized by the system.
+</p>
+
+<h3>Requirement</h3>
+
+<p>
+	the script requires PHP 5.2 and above with Zip support enabled
+	which is often provided by package "php5-zip".
+	To verify its support, type in a terminal.
+<pre>
+	php -i | grep zip
+</pre>
+</p>
+<h3>Usage</h3>
+
+<pre>
+	$ get-the-docs help
+
+	Toolbox for managing TYPO3 documentation
+
+	Usage:
+		get-the-docs render     Render documentation remotely
+		get-the-docs convert    Convert legacy OpenOffice documentation to reST
+		get-the-docs config     Download configuration for local rendering (Working but still missing features...)
+		get-the-docs help       Print this help
+</pre>
+<h3>Source code</h3>
+
+<p>
+	The project will be put on <a href="http://forge.typo3.org/projects/team-docteam">Forge</a> in a near future for welcoming
+	contribution.
+</p>
+
+<h2>Web form</h2>
+
+<p>You can make use of this form to convert a reST manual.</p>
+
+<form action="#" method="post" enctype="multipart/form-data">
+	<fieldset>
+		<legend>formats:</legend>
+		<div>
+			<input id="html" type="checkbox" value="html" checked/><label for="html">HTML</label>
+			<input id="pdf" type="checkbox" value="pdf"/><label for="pdf">PDF</label>
+			<input id="epub" type="checkbox" value="epub"/><label for="epub">ePub</label>
+		</div>
+	</fieldset>
+	<fieldset>
+		<legend>ZIP file or SXW file:</legend>
+		<input type="file" name="ufile" />
+	</fieldset>
+	<fieldset>
+		<legend>Create Zip archive:</legend>
+		<input id="yes" type="radio" name="archive" value="1"><label for="yes">Yes</label>
+		<input id="no" type="radio" value="archive" value="0" checked><label for="no">No</label>
+	</fieldset>
+	<input type="submit" value="Upload" disabled/> (The form is deactivated for now)
+</form>
+<p>Generated files are automatically removed after a grace period.</p>
+
+<h3>File Structure</h3>
+
+<p>Please upload a zip archive containing all reST images and any additional images. E.g.,</p>
+<pre>
+Extension.zip
+|-- Documentation
+	`-- Index.rst
+	`-- Images
+</pre>
+
+
+<h2>Local installation</h2>
+
+<p>
+	It is also possible to install the "build chain" on your local machine for speed purposes or because of more advanced
+	rendering.
+	Refer to <a href="http://wiki.typo3.org/ReST">our wiki</a> to get started.
+	In a nutshell, you will find resources to
+
+<ul>
+	<li>
+		install <a href="http://sphinx.pocoo.org/">Sphinx</a>
+	</li>
+	<li>
+		install the TYPO3 theme
+	</li>
+	<li>
+		generate and configure build files
+	</li>
+</ul>
+</p>
+
+<h2>Resources</h2>
+<ul>
+	<li>ReST documentation template: <a href="resources/manual.rst">manual.rst</a></li>
+	<li>Complex example (zip): <a href="resources/egovapi.zip">EXT:egovapi</a></li>
+	<li>Sample conversion output: <a href="examples/">HTML + PDF</a></li>
+</ul>
+</body>
+
+</html>

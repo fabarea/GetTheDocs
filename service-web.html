@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="de" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8">
+	<title>get.typo3.org</title>
+	<style type="text/css">
+		html, body {
+		}
+
+		fieldset {
+			border: 0 solid #000000;
+		}
+	</style>
+</head>
+<body style="width: 700px">
+
+<h2>Web form</h2>
+
+<p>Use this form to convert a reST manual.</p>
+
+<form action="#" method="post" enctype="multipart/form-data">
+	<fieldset>
+		<legend>formats:</legend>
+		<div>
+			<input id="html" type="checkbox" value="html" checked/><label for="html">HTML</label>
+			<input id="pdf" type="checkbox" value="pdf"/><label for="pdf">PDF</label>
+			<input id="epub" type="checkbox" value="epub"/><label for="epub">ePub</label>
+		</div>
+	</fieldset>
+	<fieldset>
+		<legend>ZIP file or SXW file:</legend>
+		<input type="file" name="ufile"/>
+	</fieldset>
+	<fieldset>
+		<legend>Create Zip archive:</legend>
+		<input id="yes" type="radio" name="archive" value="1"><label for="yes">Yes</label>
+		<input id="no" type="radio" value="archive" value="0" checked><label for="no">No</label>
+	</fieldset>
+	<input type="submit" value="Upload" disabled/> (The form is not active for now)
+</form>
+<p>Generated files are automatically removed after a grace period.</p>
+
+<h3>File Structure</h3>
+
+<p>Please upload a zip archive containing all reST images and any additional images. E.g.,</p>
+<pre>
+Extension.zip
+|-- Documentation
+    `-- Index.rst
+    `-- Images
+</pre>
+
+
+</body>
+
+</html>

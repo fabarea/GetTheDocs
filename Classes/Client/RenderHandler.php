@@ -84,6 +84,10 @@ class RenderHandler {
 			$this->formats[] = 'pdf';
 		}
 
+		if (isset($this->arguments['epub'])) {
+			$this->formats[] = 'epub';
+		}
+
 		if (isset($this->arguments['html']) || empty($this->formats)) {
 			$this->formats[] = 'html';
 		}
@@ -91,6 +95,110 @@ class RenderHandler {
 		if (isset($this->arguments['zip'])) {
 			$this->archive = 'zip';
 		}
+	}
+
+	/**
+	 * Get a list of files
+	 *
+	 * @return array
+	 */
+	protected function getFiles() {
+
+		$files = array();
+
+		// Get all reST files
+		$directory = new RecursiveDirectoryIterator("$this->directory");
+		$filter = new DirectoryFilter($directory, '/^(?!\..*|_.*)/'); // Filter out folders
+		$filter = new FileFilter($filter, '/\.(?:rst)$/'); // Filter files
+		$iterator = new RecursiveIteratorIterator($filter);
+		foreach ($iterator as $key => $file) {
+			$files[] = $key;
+		}
+
+		// Get all images
+		$directory = new RecursiveDirectoryIterator(realpath("$this->directory/Documentation"));
+		$filter = new DirectoryFilter($directory, '/^(?!\..*|_.*)/'); // Filter out folders
+		$filter = new FileFilter($filter, '/\.(?:jpg|gif|png|jpeg)$/'); // Filter files
+		$iterator = new RecursiveIteratorIterator($filter);
+		foreach ($iterator as $key => $file) {
+			$files[] = $key;
+		}
+
+		// Add also ext_emconf.php to use as source of information on the server
+		if (is_file("$this->directory/ext_emconf.php")) {
+			$files[] = "$this->directory/ext_emconf.php";
+		}
+		return $files;
+	}
+
+	/**
+	 * Create an archive
+	 *
+	 * @param $files
+	 * @throws Exception
+	 * @return array
+	 */
+	protected function makeArchive($files) {
+
+		Console::output("Generating archive...");
+
+		// create object
+		$zip = new ZipArchive();
+
+		$tempFile = tempnam('/tmp', 't3')  . '.zip';
+		if (!$zip->open($tempFile, ZIPARCHIVE::OVERWRITE)) {
+			die("Failed to create archive" . PHP_EOL);
+
+		}
+
+		foreach ($files as $file) {
+			$absolutePath = realpath($file);
+			$parts = explode($this->directory, $absolutePath);
+			if (! empty ($parts[1])) {
+				$relativePath = substr($parts[1], 1);
+				$result = $zip->addFile($absolutePath, $relativePath);
+				if (! $result) {
+					throw new Exception("Could not add file: $absolutePath");
+				}
+			}
+		}
+
+		// Test status
+		if (!$zip->status == ZIPARCHIVE::ER_OK) {
+			echo "Failed to write files to zip" . PHP_EOL;
+		}
+		$zip->close();
+
+		$zipFile = array(
+			'path' => $tempFile,
+			'name' => basename($this->directory) . '.zip',
+		);
+
+		return $zipFile;
+	}
+
+	/**
+	 * Send archive to the server
+	 *
+	 * @param $zipFile
+	 */
+	protected function send($zipFile) {
+		Console::output("Sending to server...");
+
+		$data = array();
+		$data['action'] = 'render';
+		$data['username'] = USERNAME;
+		$data['format'] = implode(',', $this->formats);
+		$data['archive'] = $this->archive;
+		$data['debug'] = $this->debug ? 1 : 0;
+		$files = array();
+		$files['archive'] = array(
+			'path' => $zipFile['path'],
+			'name' => $zipFile['name'],
+		);
+
+		$content = Request::post(HOST, $data, $files);
+		Console::output($content);
 	}
 
 	/**
@@ -102,40 +210,12 @@ class RenderHandler {
 		}
 
 		$this->checkEnvironment();
+		$files = $this->getFiles();
+		$zipFile = $this->makeArchive($files);
+		$this->send($zipFile);
 
-		// Computes command to be run
-		$extensionName = basename($this->directory);
-		$tmpFile = '/tmp/' . $extensionName . '.zip';
-		$commands[] = 'echo "Generating archive..."';
-		$commands[] = "cd $this->directory; zip -rq $tmpFile . --include \*.rst";
-
-		// Add possible images into the Zip
-		if (is_dir("$this->directory/Documentation/Images/")) {
-			$commands[] = "cd $this->directory; zip -rq $tmpFile . --include Documentation/Images/**";
-		}
-
-		// Add also ext_emconf.php to use as source of information on the server
-		if (is_file("$this->directory/ext_emconf.php")) {
-			$commands[] = "zip -rq $tmpFile $this->directory --include $this->directory/ext_emconf.php";
-		}
-		$commands[] = 'echo "Sending to server..."';
-		$host = rtrim(HOST, '/');
-
-		$options = array();
-		$options[] = "-F archive=@" . $tmpFile;
-		$options[] = "-F 'username=" . USERNAME . ";type=text/foo'";
-		$options[] = "-F 'action=render;type=text/foo'";
-		$options[] = "-F 'format=" . implode(',', $this->formats) . ";type=text/foo'";
-		$options[] = "-F 'archive=$this->archive;type=text/foo'";
-		if ($this->debug) {
-			$options[] = "-F 'debug=1;type=text/foo'";
-		}
-
-		$commands[] = CURL . " -k -s " . implode(' ', $options). " $host/";
-		$commands[] = "rm -f " . $tmpFile;
-
-		// Execute commands
-		Console::execute($commands);
+		// Clean up temp file
+		unlink($zipFile['path']);
 	}
 
 	/**
@@ -184,10 +264,11 @@ Usage:
 	where "PATH" points to TYPO3 extension
 
 Options:
-	--html                  Render a HTML version (implicit option if no other format option given)
-	--json                  Render a JSON version
-	--gettext               Render a GetText version
-	--pdf                   Render a PDF version (not yet implemented!)
+	--html                  Render HTML version (implicit option if no other format option given)
+	--json                  Render JSON version
+	--gettext               Render GetText version
+	--epub                  Render ePub version
+	--pdf                   Render PDF version (not yet implemented!)
 	--zip                   Make a ZIP of the generated documentation
 	--fetch                 Download what has been rendered (not yet implemented!)
 	-d, --dry-run           Output command that are going to be executed but don't run them

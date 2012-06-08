@@ -136,8 +136,6 @@ Usage:
 Options:
 	-f, --force            Overwrite files without asking
 	-h, --help             Display this help message
-	-d, --dry-run          Output command that are going to be executed but don't run them
-
 EOF;
 		Console::output($message);
 		die();

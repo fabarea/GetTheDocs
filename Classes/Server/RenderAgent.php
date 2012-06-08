@@ -60,15 +60,41 @@ class RenderAgent {
 	/**
 	 * @var array
 	 */
-	protected $settings = array();
+	protected $allowedFormats = array('html', 'json', 'gettext', 'epub');
 
 	/**
-	 * Constructor
+	 * @var array
 	 */
-	public function __construct() {
-		// Configuration
-		$uploadDirectory = 'upload';
-		$filesDirectory = 'files';
+	protected $parameters = array();
+
+	/**
+	 * Check that the value is correct
+	 *
+	 * @param $parameters
+	 * @param $files
+	 * @throws Exception
+	 * @return void
+	 */
+	public function check($parameters, $files) {
+		if (empty($files['archive']) || $files['archive']['error'] != 0) {
+			throw new Exception('missing file archive');
+		}
+
+		if ($parameters['username'] == '') {
+			throw new Exception('incomplete data');
+		}
+	}
+
+	/**
+	 * Initialize
+	 *
+	 * @param $parameters
+	 * @param $files
+	 * @return void
+	 */
+	public function initialize($parameters, $files) {
+
+		$this->parameters = $parameters;
 
 		// Get file name value without extension
 		$fileNameWithExtension = $_FILES['archive']['name'];
@@ -79,27 +105,27 @@ class RenderAgent {
 		$this->extensionVersion = '1.0';
 
 		// Get user workspace
-		$username = !empty($_POST['username']) ? $_POST['username'] : '';
+		$username = !empty($this->parameters['username']) ? $this->parameters['username'] : '';
 
 		#$identifier = str_shuffle(uniqid(TRUE)); // not used for now... possible random number
 
 		// Computes property
 		$this->homeDirectory = dirname($_SERVER['SCRIPT_FILENAME']);
-		$this->userDirectory = "$uploadDirectory/$username";
-		$this->uploadDirectory = "$uploadDirectory/$username/$this->fileName";
-		$this->buildDirectory = "$filesDirectory/$username/$this->fileName";
+		$this->userDirectory = UPLOAD . "/$username";
+		$this->uploadDirectory = UPLOAD . "/$username/$this->fileName";
+		$this->buildDirectory = FILES . "/$username/$this->fileName";
 		$this->warningsFile = "$this->uploadDirectory/Warnings.txt";
 		$this->url = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 
 		// Define rendered formats
-		$formats = explode(',', $_POST['format']);
+		$formats = explode(',', $this->parameters['format']);
 		foreach ($formats as $format) {
-			if (in_array($format, array('html', 'json', 'gettext'))) {
+			if (in_array($format, $this->allowedFormats)) {
 				$this->formats[] = $format;
 			}
 		}
 		// Define whether to zip
-		if ($_POST['archive'] == 'zip') {
+		if ($this->parameters['archive'] == 'zip') {
 			$this->archive = 'zip';
 		}
 	}
@@ -109,8 +135,7 @@ class RenderAgent {
 	 *
 	 * @return void
 	 */
-	public function work() {
-		$this->check();
+	public function process() {
 		$this->prepare();
 		$this->unPack();
 		$this->render();
@@ -126,13 +151,13 @@ class RenderAgent {
 	protected function render() {
 
 		// Generate configuration files
-		$view = new Template('Resources/Template/conf.py');
+		$view = new Template('Resources/Private/Template/RenderAgent/conf.py');
 		$view->set('version', $this->extensionVersion);
 		$view->set('extensionName', $this->extensionName);
 		$content = $view->fetch();
 		file_put_contents($this->uploadDirectory . '/conf.py', $content);
 
-		$view = new Template('Resources/Template/Makefile');
+		$view = new Template('Resources/Private/Template/RenderAgent/Makefile');
 		$view->set('buildDirectory', "$this->homeDirectory/$this->buildDirectory");
 		$content = $view->fetch();
 		file_put_contents($this->uploadDirectory . '/Makefile', $content);
@@ -144,6 +169,7 @@ class RenderAgent {
 		foreach ($this->formats as $format) {
 			$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make $format --quiet;";
 		}
+			$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make latex --quiet;";
 
 		if ($this->archive == 'zip') {
 			$commands[] = "cd $this->homeDirectory/$this->buildDirectory/..; zip -qr $this->fileName.zip $this->fileName";
@@ -153,22 +179,9 @@ class RenderAgent {
 	}
 
 	/**
-	 * Check that the value is correct
-	 *
-	 * @return void
-	 */
-	protected function check() {
-		if (empty($_FILES['archive']) ||
-			$_FILES['archive']['error'] != 0 ||
-			$_POST['username'] == ''
-		) {
-			throw new Exception('Exception: incomplete data');
-		}
-	}
-
-	/**
 	 * Create directory
 	 *
+	 * @throws Exception
 	 * @return void
 	 */
 	protected function prepare() {
@@ -187,6 +200,7 @@ class RenderAgent {
 	/**
 	 * Unzip archive
 	 *
+	 * @throws Exception
 	 * @return void
 	 */
 	protected function unPack() {
@@ -220,14 +234,17 @@ class RenderAgent {
 		$rendered = '';
 		foreach ($this->formats as $format) {
 			if ($format == 'html') {
-				$rendered .= "HTML documentation:\n";
+				$rendered .= "HTML docs:\n";
 				$rendered .= "$this->url$this->buildDirectory\n\n";
 			} elseif ($format == 'json') {
-				$rendered .= "JSON documentation:\n";
+				$rendered .= "JSON docs:\n";
 				$rendered .= "$this->url$this->buildDirectory/json\n\n";
 			} elseif ($format == 'gettext') {
-				$rendered .= "GetText documentation:\n";
+				$rendered .= "GetText docs:\n";
 				$rendered .= "$this->url$this->buildDirectory/local\n\n";
+			} elseif ($format == 'epub') {
+				$rendered .= "ePub docs:\n";
+				$rendered .= "$this->url$this->buildDirectory/epub\n\n";
 			}
 		}
 

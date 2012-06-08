@@ -2,21 +2,7 @@
 /**
  * Worker class to make the job done!
  */
-class Dispatcher {
-
-	/**
-	 * @var array
-	 */
-	protected $dataSet = array();
-
-	/**
-	 * Constructor
-	 */
-	public function __construct() {
-		$this->dataSet['render'] = 'RenderHandler';
-		$this->dataSet['fetch'] = 'FetchHandler';
-		$this->dataSet['convert'] = 'ConvertHandler';
-	}
+class Client {
 
 	/**
 	 * Dispatch the job
@@ -60,7 +46,7 @@ Toolbox for managing TYPO3 documentation
 
 Usage:
 	get-the-docs render     Render documentation remotely
-	get-the-docs convert    Convert legacy OpenOffice documentation to reST (Not yet implemented)
+	get-the-docs convert    Convert legacy OpenOffice documentation to reST
 	get-the-docs config     Download configuration for local rendering (Working but still missing features...)
 	get-the-docs help       Print this help
 EOF;

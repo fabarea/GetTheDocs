@@ -128,7 +128,7 @@ class Console {
 		} elseif (is_bool($message)) {
 			var_dump($message);
 		} else {
-			print $message . chr(10);
+			print $message . PHP_EOL;
 		}
 	}
 }

@@ -14,8 +14,8 @@ define('HOST', 'http://preview.docs.typo3.org/getthedocs/');
 define('CURL', '/usr/bin/curl');
 
 try {
-	$dispatcher = new Dispatcher();
-	$dispatcher->dispatch($argv);
+	$client = new Client();
+	$client->dispatch($argv);
 }
 catch (Exception $e) {
 	print $e;

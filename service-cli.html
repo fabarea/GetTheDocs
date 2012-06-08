@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="de" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8">
+	<title>get.typo3.org</title>
+	<style type="text/css">
+		html, body {
+		}
+
+		fieldset {
+			border: 0 solid #000000;
+		}
+	</style>
+</head>
+<body style="width: 700px">
+
+
+<h2>Command line tool</h2>
+
+This script will help you in generating TYPO3 documentation from the command line.
+
+<h3>Installation</h3>
+
+<p>
+	Download <a href="http://forge.typo3.org/projects/team-docteam">the script</a> somewhere in your system. On a *nix system, it
+	can be achieved from the command line with:
+<pre>
+	cd PATH
+	curl -s http://preview.docs.typo3.org/getthedocs/get-the-docs.php > get-the-docs;
+	chmod 755 get-the-docs
+</pre>
+<p>
+	<span style="text-decoration: underline">Tip</span>: putting the script somewhere in your PATH (e.g /usr/bin/) would make the
+	command recognized by the system.
+</p>
+
+<h3>Requirement</h3>
+
+<p>
+	the script requires PHP 5.2 and above with Zip support enabled
+	which is often provided by package "php5-zip".
+	To verify its support, type in a terminal.
+<pre>
+	php -i | grep zip
+</pre>
+</p>
+<h3>Usage</h3>
+
+<pre>
+	$ get-the-docs help
+
+	Toolbox for managing TYPO3 documentation
+
+	Usage:
+		get-the-docs render     Render documentation remotely
+		get-the-docs convert    Convert legacy OpenOffice documentation to reST
+		get-the-docs config     Download configuration for local rendering (Working but still missing features...)
+		get-the-docs help       Print this help
+</pre>
+<h3>Source code</h3>
+
+<p>
+	The project will be put on <a href="http://forge.typo3.org/projects/team-docteam">Forge</a> in a near future for welcoming
+	contribution.
+</p>
+
+
+</body>
+
+</html>
