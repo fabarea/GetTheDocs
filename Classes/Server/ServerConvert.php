@@ -1,11 +1,16 @@
 <?php
 
-class ConvertAgent {
+class ServerConvert {
 
 	/**
 	 * @var string
 	 */
 	protected $uploadDirectory = '';
+
+	/**
+	 * @var string
+	 */
+	protected $zipFile = '';
 //
 //	/**
 //	 * @var string
@@ -48,18 +53,30 @@ class ConvertAgent {
 	protected $parameters = array();
 
 	/**
-	 * Check values are correct
+	 * Constructor
 	 *
 	 * @param $parameters
 	 * @param $files
+	 * @return void
+	 */
+	public function __construct($parameters, $files) {
+		$this->parameters = $parameters;
+		if (!empty($files['manual'])) {
+			$this->file = $files['manual'];
+		}
+	}
+
+	/**
+	 * Check values are correct
+	 *
 	 * @throws Exception
 	 * @return void
 	 */
-	public function check($parameters, $files) {
-		if (empty($files['manual']) || $files['manual']['error'] != 0) {
+	 protected  function check() {
+		if (empty($this->file) || $this->file['error'] != 0) {
 			throw new Exception('missing file manual');
 		}
-		if ($parameters['username'] == '') {
+		if ($this->parameters['user_workspace'] == '') {
 			throw new Exception('incomplete data');
 		}
 	}
@@ -67,15 +84,10 @@ class ConvertAgent {
 	/**
 	 * Initialize
 	 *
-	 * @param $parameters
-	 * @param $files
 	 * @return void
 	 */
-	public function initialize($parameters, $files) {
-		$this->parameters = $parameters;
-		$this->file = $files['manual'];
-
-		$this->uploadDirectory = UPLOAD . "/{$this->parameters['username']}/tmp";
+	 protected  function initialize() {
+		$this->uploadDirectory = UPLOAD . "/{$this->parameters['user_workspace']}/tmp";
 
 //		// Configuration
 //
@@ -85,7 +97,7 @@ class ConvertAgent {
 //		$this->fileName = $fileInfo['filename'];
 //
 //		// Get user workspace
-//		$username = !empty($_POST['username']) ? $_POST['username'] : '';
+//		$username = !empty($_POST['user_workspace']) ? $_POST['user_workspace'] : '';
 //
 //		#$identifier = str_shuffle(uniqid(TRUE)); // not used for now... possible random number
 //
@@ -114,6 +126,8 @@ class ConvertAgent {
 	 * @return void
 	 */
 	public function process() {
+		$this->check();
+		$this->initialize();
 		$this->prepare();
 		$this->render();
 //		$this->displayFeedback();
@@ -187,12 +201,12 @@ class ConvertAgent {
 	 */
 	protected function unPack() {
 		$zip = new \ZipArchive();
-		$res = $zip->open($_FILES['archive']['tmp_name']);
+		$res = $zip->open($_FILES['zip_file']['tmp_name']);
 		if ($res === TRUE) {
 			$zip->extractTo($this->uploadDirectory);
 			$zip->close();
 		} else {
-			throw new Exception('Exception: something when wrong with the archive');
+			throw new Exception('Exception: something when wrong with the zip file');
 		}
 	}
 
@@ -227,8 +241,8 @@ class ConvertAgent {
 			}
 		}
 
-		if ($this->archive == 'zip') {
-			$rendered .= "Zip archive to download:\n";
+		if ($this->zipFile == 'zip') {
+			$rendered .= "Zip file to download:\n";
 			$rendered .= "$this->url$this->buildDirectory.zip\n\n";
 		}
 

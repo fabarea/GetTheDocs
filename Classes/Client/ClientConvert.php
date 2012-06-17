@@ -3,7 +3,7 @@
 /**
  * Worker class to make the job done!
  */
-class ConvertHandler {
+class ClientConvert {
 
 	/**
 	 * @var string
@@ -59,7 +59,8 @@ class ConvertHandler {
 
 		$data = array();
 		$data['action'] = 'convert';
-		$data['username'] = USERNAME;
+		$data['user_workspace'] = USER_WORKSPACE;
+		$data['api_version'] = API_VERSION;
 		$files = array();
 		$files['manual'] = array(
 			'path' => $this->manual,

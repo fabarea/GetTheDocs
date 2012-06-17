@@ -17,7 +17,7 @@ class Client {
 		}
 		else {
 			$action = $arguments[1];
-			$className = ucfirst($action) . 'Handler';
+			$className = 'Client' . ucfirst($action);
 			if (class_exists($className)) {
 				array_shift($arguments); // we don't need that one
 				$class = new $className($arguments);

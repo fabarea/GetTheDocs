@@ -5,6 +5,13 @@
 class Server {
 
 	/**
+	 * The format to be output. Possibles values: text, html
+	 *
+	 * @var string
+	 */
+	static public $format = 'text';
+
+	/**
 	 * Dispatch the job
 	 *
 	 * @return void
@@ -24,13 +31,13 @@ class Server {
 		// Call the right handler
 		switch ($parameters['action']) {
 			case 'render':
-				$agent = new RenderAgent();
+				$agent = new ServerRender($parameters, $files);
 				break;
 			case 'config':
-				$agent = new ConfigAgent();
+				$agent = new ServerConfig($parameters);
 				break;
 			case 'convert':
-				$agent = new ConvertAgent();
+				$agent = new ServerAgent($parameters, $files);
 				break;
 			default:
 				$message = <<< EOF
@@ -40,9 +47,26 @@ EOF;
 				die();
 		}
 
-		$agent->check($parameters, $files);
-		$agent->initialize($parameters, $files);
 		$agent->process();
+	}
+
+	/**
+	 * Output message.
+	 *
+	 * @return void
+	 */
+	static public function output($message = '') {
+		if (is_array($message) || is_object($message)) {
+			print_r($message);
+		} elseif (is_bool($message)) {
+			var_dump($message);
+		} else {
+			// parse links
+			if (self::$format == 'html') {
+				$message = preg_replace('/(http:\/\/[^\n ]+)/is', '<a href="$1" target="_blank">$1</a>', $message);
+			}
+			print $message . PHP_EOL;
+		}
 	}
 }
 

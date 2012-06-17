@@ -9,9 +9,15 @@
 
 // @todo code an HTML version for http://preview.docs.typo3.org/getthedocs
 // @todo add some conversation with the User to generate a file containing the information below
-define('USERNAME', 'anonymous');
+
+$userWorkspace = 'anonymous';
+if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN' && exec('whoami') !== '') {
+	$userWorkspace = exec('whoami');
+}
+
+define('USER_WORKSPACE', $userWorkspace);
 define('HOST', 'http://preview.docs.typo3.org/getthedocs/');
-define('CURL', '/usr/bin/curl');
+define('API_VERSION', '1.0.0');
 
 try {
 	$client = new Client();

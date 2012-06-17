@@ -1,6 +1,6 @@
 <?php
 
-class ConfigAgent {
+class ServerConfig {
 
 	/**
 	 * @var string
@@ -28,26 +28,31 @@ class ConfigAgent {
 	protected $parameters = array();
 
 	/**
-	 * Check that the value is correct
+	 * Constructor
 	 *
 	 * @param $parameters
+	 * @return void
+	 */
+	public function __construct($parameters) {
+		$this->parameters = $parameters;
+	}
+	/**
+	 * Check that the value is correct
+	 *
 	 * @throws Exception
 	 * @return void
 	 */
-	public function check($parameters) {
-		if (!in_array($parameters['file'], $this->possibleFiles)) {
-			throw new Exception("Exception: unknown file request \"{$parameters['file']}\"");
+	public function check() {
+		if (!in_array($this->parameters['file'], $this->possibleFiles)) {
+			throw new Exception("Exception: unknown file request \"{$this->parameters['file']}\"");
 		}
 	}
 
 	/**
 	 * Initialize
 	 *
-	 * @param $parameters
 	 */
-	public function initialize($parameters) {
-
-		$this->parameters = $parameters;
+	protected function initialize() {
 
 		// @todo find a way to get theses values dynamically
 		$this->extensionName = 'Dummy';
@@ -60,7 +65,9 @@ class ConfigAgent {
 	 *
 	 * @return void
 	 */
-	public function process() {
+	protected function process() {
+		$this->check();
+		$this->initialize();
 		$this->render();
 	}
 
@@ -72,7 +79,7 @@ class ConfigAgent {
 	protected function render() {
 
 		// Generate configuration files
-		$view = new Template("Resources/Private/Template/ConfigAgent/$this->fileName");
+		$view = new Template("Resources/Private/Template/ServerConfig/$this->fileName");
 
 		if ($this->fileName == 'conf.py') {
 			$view->set('version', $this->extensionVersion);

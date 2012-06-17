@@ -2,7 +2,7 @@
 /**
  * Worker class to make the job done!
  */
-class ConfigHandler {
+class ClientConfig {
 
 	/**
 	 * @var string
@@ -55,6 +55,7 @@ class ConfigHandler {
 
 		$data = array();
 		$data['action'] = 'config';
+		$data['api_version'] = API_VERSION;
 
 		foreach ($this->files as $file) {
 			$data['file'] = $file;

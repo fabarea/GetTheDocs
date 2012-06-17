@@ -25,14 +25,6 @@ class Request {
 			$data .= "Content-Transfer-Encoding: binary\n\n";
 			$data .= $fileContents . "\n";
 			$data .= "--$boundary--\n";
-
-//			$fileContents = file_get_contents($file['tmp_name']);
-//
-//			$data .= "Content-Disposition: form-data; name=\"{$key}\"; filename=\"{$file['name']}\"\n";
-//			$data .= "Content-Type: image/jpeg\n";
-//			$data .= "Content-Transfer-Encoding: binary\n\n";
-//			$data .= $fileContents . "\n";
-//			$data .= "--$boundary--\n";
 		}
 
 		$params = array('http' => array(

@@ -10,44 +10,107 @@
 		fieldset {
 			border: 0 solid #000000;
 		}
+
+		.doc-box-field {
+			margin-bottom: 10px;
+		}
+
+		.doc-box-field input {
+			width: 250px;
+		}
+
+		#doc-form-box {
+			background-color: #ECECEC;
+			width: 500px;
+		}
+
+		#doc-result-box {
+			background-color: #f0f0f0;
+			margin-top: 10px;
+		}
+
+		.doc-fieldset {
+			float: left;
+		}
 	</style>
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.js"></script>
+	<script src="http://malsup.github.com/jquery.form.js"></script>
+
+	<script>
+		// wait for the DOM to be loaded
+		$(document).ready(function () {
+
+			// bind 'doc-form' submit
+			$('#doc-form').ajaxForm({
+				beforeSubmit:function () {
+					var loading;
+					loading = '<img src="http://www.webscriptlab.com/file/loading/output/133975532033.gif" alt="" />';
+					$('#doc-result-box').html(loading);
+				},
+				target:'#doc-result-box',
+				success:function (data) {
+					if (window.console) {
+						console.log(data);
+					}
+				}
+			});
+		});
+	</script>
 </head>
 <body style="width: 700px">
 
-<h2>Web form</h2>
+<h2>Web form to convert documentation</h2>
 
-<p>Use this form to convert a reST manual.</p>
+<p>Use this form to upload a Zip containing reST files.</p>
 
-<form action="#" method="post" enctype="multipart/form-data">
-	<fieldset>
-		<legend>formats:</legend>
-		<div>
-			<input id="html" type="checkbox" value="html" checked/><label for="html">HTML</label>
-			<input id="pdf" type="checkbox" value="pdf"/><label for="pdf">PDF</label>
-			<input id="epub" type="checkbox" value="epub"/><label for="epub">ePub</label>
-		</div>
-	</fieldset>
-	<fieldset>
-		<legend>ZIP file or SXW file:</legend>
-		<input type="file" name="ufile"/>
-	</fieldset>
-	<fieldset>
-		<legend>Create Zip archive:</legend>
-		<input id="yes" type="radio" name="archive" value="1"><label for="yes">Yes</label>
-		<input id="no" type="radio" value="archive" value="0" checked><label for="no">No</label>
-	</fieldset>
-	<input type="submit" value="Upload" disabled/> (The form is not active for now)
-</form>
-<p>Generated files are automatically removed after a grace period.</p>
-
-<h3>File Structure</h3>
-
-<p>Please upload a zip archive containing all reST images and any additional images. E.g.,</p>
+<div id="doc-form-box">
+	<form id="doc-form" action="index.php" method="post" enctype="multipart/form-data">
+		<fieldset class="doc-fieldset">
+			<legend></legend>
+			<div class="doc-box-field">
+				<label for="zip_file">Zip file (cf. <a href="#file_structure">File Structure</a>)</label> <br/>
+				<input id="zip_file" type="file" name="zip_file">
+			</div>
+			<div class="doc-box-field">
+				<label for="doc_name">Documentation name</label> <br/>
+				<input id="doc_name" type="text" name="doc_name" value="" placeholder="Documentation name"/>
+			</div>
+		</fieldset>
+		<fieldset class="doc-fieldset">
+			<fieldset>
+				<legend>formats to convert</legend>
+				<div>
+					<input id="html" type="checkbox" name="html" value="1" checked/><label for="html">HTML</label>
+					<input id="pdf" type="checkbox" name="pdf" value="1"/><label for="pdf">PDF</label>
+					<input id="epub" type="checkbox" name="epub" value="1"/><label for="epub">ePub</label>
+				</div>
+			</fieldset>
+			<fieldset>
+				<legend>Generate Zip archive</legend>
+				<input id="yes" type="radio" name="make_zip" value="1"><label for="yes">Yes</label>
+				<input id="no" type="radio" name="make_zip" value="0" checked><label for="no">No</label>
+			</fieldset>
+		</fieldset>
+		<fieldset style="clear: both">
+		<input type="submit" value="Upload"/>
+		</fieldset>
+	</form>
+</div>
+<div id="">
 <pre>
-Extension.zip
-|-- Documentation
-    `-- Index.rst
-    `-- Images
+	<div id="doc-result-box" />
+
+</pre>
+</div>
+
+<h3 id="file_structure">File Structure</h3>
+
+<p>Please upload a zip archive containing all reST files and any additional images. E.g.,</p>
+<pre>
+Documentation.zip
+|-- Index.rst
+`-- Images
 </pre>
 
 

@@ -1,6 +1,6 @@
 <?php
 
-class RenderAgent {
+class ServerRender {
 
 	/**
 	 * @var string
@@ -43,6 +43,13 @@ class RenderAgent {
 	protected $fileName = '';
 
 	/**
+	 * The file uploaded
+	 *
+	 * @var array
+	 */
+	protected $file = array();
+
+	/**
 	 * @var string
 	 */
 	protected $url = '';
@@ -50,7 +57,7 @@ class RenderAgent {
 	/**
 	 * @var string
 	 */
-	protected $archive = '';
+	protected $makeZip = '';
 
 	/**
 	 * @var array
@@ -68,65 +75,79 @@ class RenderAgent {
 	protected $parameters = array();
 
 	/**
-	 * Check that the value is correct
+	 * Constructor
 	 *
 	 * @param $parameters
 	 * @param $files
+	 * @return void
+	 */
+	public function __construct($parameters, $files) {
+		$this->parameters = $parameters;
+		if (!empty($files['zip_file'])) {
+			$this->file = $files['zip_file'];
+		}
+	}
+
+	/**
+	 * Check that the value is correct
+	 *
 	 * @throws Exception
 	 * @return void
 	 */
-	public function check($parameters, $files) {
-		if (empty($files['archive']) || $files['archive']['error'] != 0) {
-			throw new Exception('missing file archive');
+	protected function check() {
+		if (empty($this->file) || $this->file['error'] != 0) {
+			throw new Exception('missing zip file');
 		}
 
-		if ($parameters['username'] == '') {
-			throw new Exception('incomplete data');
+		if ($this->parameters['user_workspace'] == '') {
+			throw new Exception('missing user_workspace parameter');
+		}
+
+		if ($this->parameters['doc_name'] == '') {
+			throw new Exception('missing doc_name parameter');
 		}
 	}
 
 	/**
 	 * Initialize
 	 *
-	 * @param $parameters
-	 * @param $files
 	 * @return void
 	 */
-	public function initialize($parameters, $files) {
-
-		$this->parameters = $parameters;
+	protected function initialize() {
 
 		// Get file name value without extension
-		$fileNameWithExtension = $_FILES['archive']['name'];
+		$fileNameWithExtension = $this->parameters['doc_name'];
 		$fileInfo = pathinfo($fileNameWithExtension);
 		$this->fileName = $fileInfo['filename'];
 
 		$this->extensionName = $this->fileName;
 		$this->extensionVersion = '1.0';
 
-		// Get user workspace
-		$username = !empty($this->parameters['username']) ? $this->parameters['username'] : '';
+		// Computes user workspace
+		$userWorkspace = !empty($this->parameters['user_workspace']) ? $this->parameters['user_workspace'] : 'cli';
+		$docWorkspace = !empty($this->parameters['doc_workspace']) ? $this->parameters['doc_workspace'] : 'undefined';
 
 		#$identifier = str_shuffle(uniqid(TRUE)); // not used for now... possible random number
 
-		// Computes property
+		// Computes some needed properties
 		$this->homeDirectory = dirname($_SERVER['SCRIPT_FILENAME']);
-		$this->userDirectory = UPLOAD . "/$username";
-		$this->uploadDirectory = UPLOAD . "/$username/$this->fileName";
-		$this->buildDirectory = FILES . "/$username/$this->fileName";
+		$this->userDirectory = UPLOAD . "/$userWorkspace";
+		$this->uploadDirectory = UPLOAD . "/$userWorkspace/$docWorkspace";
+		$this->buildDirectory = FILES . "/$userWorkspace/$docWorkspace";
 		$this->warningsFile = "$this->uploadDirectory/Warnings.txt";
-		$this->url = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+		$this->url = 'http://' . $_SERVER['HTTP_HOST'] . str_replace('index.php', '', $_SERVER['PHP_SELF']);
 
-		// Define rendered formats
+		// Define formats to be generated
 		$formats = explode(',', $this->parameters['format']);
 		foreach ($formats as $format) {
 			if (in_array($format, $this->allowedFormats)) {
 				$this->formats[] = $format;
 			}
 		}
-		// Define whether to zip
-		if ($this->parameters['archive'] == 'zip') {
-			$this->archive = 'zip';
+
+		// Define whether to make a zip file after rendering the doc
+		if ($this->parameters['make_zip'] == 'zip') {
+			$this->makeZip = 'zip';
 		}
 	}
 
@@ -136,11 +157,13 @@ class RenderAgent {
 	 * @return void
 	 */
 	public function process() {
+		$this->check();
+		$this->initialize();
 		$this->prepare();
 		$this->unPack();
 		$this->render();
 		$this->displayFeedback();
-		$this->cleanUp();
+		#$this->cleanUp();
 	}
 
 	/**
@@ -151,13 +174,13 @@ class RenderAgent {
 	protected function render() {
 
 		// Generate configuration files
-		$view = new Template('Resources/Private/Template/RenderAgent/conf.py');
+		$view = new Template('Resources/Private/Template/ServerRender/conf.py');
 		$view->set('version', $this->extensionVersion);
 		$view->set('extensionName', $this->extensionName);
 		$content = $view->fetch();
 		file_put_contents($this->uploadDirectory . '/conf.py', $content);
 
-		$view = new Template('Resources/Private/Template/RenderAgent/Makefile');
+		$view = new Template('Resources/Private/Template/ServerRender/Makefile');
 		$view->set('buildDirectory', "$this->homeDirectory/$this->buildDirectory");
 		$content = $view->fetch();
 		file_put_contents($this->uploadDirectory . '/Makefile', $content);
@@ -167,11 +190,11 @@ class RenderAgent {
 		$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make clean --quiet;";
 
 		foreach ($this->formats as $format) {
-			$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make $format --quiet;";
+			$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make $format --quiet 2> Warnings.txt;";
 		}
-			$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make latex --quiet;";
+		$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make latex --quiet;";
 
-		if ($this->archive == 'zip') {
+		if ($this->makeZip == 'zip') {
 			$commands[] = "cd $this->homeDirectory/$this->buildDirectory/..; zip -qr $this->fileName.zip $this->fileName";
 		}
 
@@ -198,19 +221,19 @@ class RenderAgent {
 	}
 
 	/**
-	 * Unzip archive
+	 * Unzip zip file
 	 *
 	 * @throws Exception
 	 * @return void
 	 */
 	protected function unPack() {
 		$zip = new \ZipArchive();
-		$res = $zip->open($_FILES['archive']['tmp_name']);
+		$res = $zip->open($this->file['tmp_name']);
 		if ($res === TRUE) {
 			$zip->extractTo($this->uploadDirectory);
 			$zip->close();
 		} else {
-			throw new Exception('Exception: something when wrong with the archive');
+			throw new Exception('Exception: something when wrong with the zip file');
 		}
 	}
 
@@ -225,7 +248,7 @@ class RenderAgent {
 	}
 
 	/**
-	 * Unzip archive
+	 * Unzip zip file
 	 *
 	 * @return void
 	 */
@@ -248,25 +271,25 @@ class RenderAgent {
 			}
 		}
 
-		if ($this->archive == 'zip') {
-			$rendered .= "Zip archive to download:\n";
+		if ($this->makeZip == 'zip') {
+			$rendered .= "Zip file to download:\n";
 			$rendered .= "$this->url$this->buildDirectory.zip\n\n";
 		}
 
 		$warnings = '';
 		if (file_exists($this->warningsFile)) {
-			$warnings = "Following warnings have been detected:\n";
+			$warnings = "\nFollowing warnings have been detected:\n\n";
 			$warnings .= file_get_contents($this->warningsFile);
 		}
 
 		$content = <<< EOF
 
 $rendered
-Notice, the docs is kept on-line for a limited time (few days)!
+Notice, generated files are automatically removed after a grace period!
 $warnings
 EOF;
 
-		print $content;
+		Server::output($content);
 	}
 }
 

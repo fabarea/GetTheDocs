@@ -2,7 +2,7 @@
 /**
  * Worker class to make the job done!
  */
-class RenderHandler {
+class ClientRender {
 
 	/**
 	 * @var string
@@ -22,12 +22,7 @@ class RenderHandler {
 	/**
 	 * @var string
 	 */
-	protected $archive = '';
-
-	/**
-	 * @var boolean
-	 */
-	#protected $verbose = FALSE;
+	protected $makeZip = '';
 
 	/**
 	 * The formats
@@ -55,10 +50,6 @@ class RenderHandler {
 			$this->directory = rtrim($this->arguments[0], '/');
 			$this->documentationDirectory = $this->directory . '/Documentation';
 		}
-
-		#if (isset($this->arguments['v']) || isset($this->arguments['verbose'])) {
-		#	$this->verbose = TRUE;
-		#}
 
 		if (isset($this->arguments['d']) || isset($this->arguments['dry-run'])) {
 			Console::$dryRun = TRUE;
@@ -93,7 +84,7 @@ class RenderHandler {
 		}
 
 		if (isset($this->arguments['zip'])) {
-			$this->archive = 'zip';
+			$this->makeZip = 'zip';
 		}
 	}
 
@@ -140,14 +131,14 @@ class RenderHandler {
 	 */
 	protected function makeArchive($files) {
 
-		Console::output("Generating archive...");
+		Console::output("Generating zip file...");
 
 		// create object
 		$zip = new ZipArchive();
 
 		$tempFile = tempnam('/tmp', 't3')  . '.zip';
 		if (!$zip->open($tempFile, ZIPARCHIVE::OVERWRITE)) {
-			die("Failed to create archive" . PHP_EOL);
+			die("Failed to create zip file" . PHP_EOL);
 
 		}
 
@@ -187,12 +178,15 @@ class RenderHandler {
 
 		$data = array();
 		$data['action'] = 'render';
-		$data['username'] = USERNAME;
+		$data['user_workspace'] = USER_WORKSPACE;
+		$data['doc_workspace'] = str_replace('.zip', '', $zipFile['name']);
+		$data['doc_name'] = $zipFile['name'];
 		$data['format'] = implode(',', $this->formats);
-		$data['archive'] = $this->archive;
+		$data['make_zip'] = $this->makeZip;
 		$data['debug'] = $this->debug ? 1 : 0;
+		$data['api_version'] = API_VERSION;
 		$files = array();
-		$files['archive'] = array(
+		$files['zip_file'] = array(
 			'path' => $zipFile['path'],
 			'name' => $zipFile['name'],
 		);
