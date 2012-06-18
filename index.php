@@ -1,11 +1,18 @@
 <?php
 
 // Configuration
-define('UPLOAD', 'upload');
-define('FILES', 'files');
+define('UPLOAD_DIRECTORY', 'upload');
+define('FILES_DIRECTORY', 'files');
 define('API_VERSION', '1.0.0');
 
-$process = FALSE;
+$doProcess = FALSE;
+
+// Handle GET / POST
+$parameters = array();
+$dirtyParameters = array_merge($_POST, $_GET);
+$dirtyParameters = array_map('trim', $dirtyParameters);
+$files = $_FILES;
+
 // case 1: the request comes from the CLI client
 // case 2: the request comes from the Web form
 if (strpos($_SERVER['HTTP_USER_AGENT'], 'PHP/') !== FALSE) {
@@ -25,53 +32,58 @@ EOF;
 		die();
 	}
 
-	$process = TRUE;
-	Server::$format = 'text';
-} elseif (!empty($_FILES['zip_file'])){
+	$doProcess = TRUE;
+	$parameters['doc_name'] = 'undefined';
+	$parameters['doc_workspace'] = 'undefined';
+	$parameters['user_workspace'] = 'anonymous';
+	$parameters = array_merge($parameters, $dirtyParameters);
 
-	// web form case
-	$formats = array();
-	if (!empty($_POST['html'])) {
-		$formats[] = 'html';
-		unset($_POST['html']);
+	Output::$format = 'text';
+
+} elseif (!empty($_FILES['zip_file'])) {
+
+	// computes format
+	$outputs = array();
+	$formats = array('html', 'pdf', 'epub');
+	foreach ($formats as $format) {
+		if (!empty($dirtyParameters[$format])) {
+			$outputs[] = $format;
+		}
 	}
 
-	if (!empty($_POST['pdf'])) {
-		$formats[] = 'pdf';
-		unset($_POST['pdf']);
+	// Render HTML if anything defined from the GUI
+	if (empty($outputs)) {
+		$outputs[] = 'html';
 	}
 
-	if (!empty($_POST['epub'])) {
-		$formats[] = 'epub';
-		unset($_POST['epub']);
+	$parameters['doc_name'] = 'undefined';
+	if (!empty($dirtyParameters['doc_name'])) {
+		$parameters['doc_name'] = $dirtyParameters['doc_name'];
 	}
 
-	// Render HTML if anything defined (which is mistake coming from the user)
-	if (empty($formats)) {
-		$formats[] = 'html';
+	$parameters['make_zip'] = FALSE;
+	if (!empty($dirtyParameters['make_zip'])) {
+		$parameters['make_zip'] = $dirtyParameters['make_zip'];
 	}
 
-	if (empty($_POST['doc_name'])) {
-		$_POST['doc_name'] = 'undefined';
-	}
+	// Computes a doc_workspace value
+	$searches = array(' ', '"', "'");
+	$docWorkspace = str_replace($searches, '_', $parameters['doc_name']);
+	$docWorkspace = strtolower($docWorkspace);
 
-	if (empty($_POST['doc_workspace'])) {
-		$_POST['doc_workspace'] = 'undefined';
-	}
-
-	$_POST['action'] = 'render';
-	$_POST['user_workspace'] = 'web';
-	$_POST['format'] = implode(',', $formats);
-	$_POST['debug'] = 0;
-
-	$process = TRUE;
-	Server::$format = 'html';
+	$parameters['action'] = 'render';
+	$parameters['doc_workspace'] = $docWorkspace;
+	$parameters['user_workspace'] = 'web';
+	$parameters['format'] = implode(',', $outputs);
+	$parameters['debug'] = 0;
+	$doProcess = TRUE;
+	Output::$format = 'html';
 }
 
-if ($process) {
+if ($doProcess) {
 	try {
 		$server = new Server();
-		$server->dispatch();
+		$server->dispatch($parameters, $files);
 	} catch (Exception $e) {
 		print $e;
 	}
@@ -90,4 +102,5 @@ function __autoload($className) {
 		include($path);
 	}
 }
+
 ?>

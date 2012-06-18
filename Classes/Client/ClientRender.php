@@ -183,7 +183,7 @@ class ClientRender {
 		$data['doc_name'] = $zipFile['name'];
 		$data['format'] = implode(',', $this->formats);
 		$data['make_zip'] = $this->makeZip;
-		$data['debug'] = $this->debug ? 1 : 0;
+		$data['debug'] = $this->debug;
 		$data['api_version'] = API_VERSION;
 		$files = array();
 		$files['zip_file'] = array(
@@ -258,7 +258,7 @@ Usage:
 	where "PATH" points to TYPO3 extension
 
 Options:
-	--html                  Render HTML version (implicit option if no other format option given)
+	--html                  Render HTML version (implicit option if no other format options given)
 	--json                  Render JSON version
 	--gettext               Render GetText version
 	--epub                  Render ePub version

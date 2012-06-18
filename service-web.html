@@ -29,7 +29,7 @@
 			margin-top: 10px;
 		}
 
-		.doc-fieldset {
+		.fieldset {
 			float: left;
 		}
 	</style>
@@ -44,15 +44,38 @@
 			// bind 'doc-form' submit
 			$('#doc-form').ajaxForm({
 				beforeSubmit:function () {
-					var loading;
-					loading = '<img src="http://www.webscriptlab.com/file/loading/output/133975532033.gif" alt="" />';
-					$('#doc-result-box').html(loading);
+					var loading, check;
+
+					check = false;
+
+					// Prevent double submission
+					if ($('#img-loading').length == 0) {
+
+						// Clean up GUI, first
+						$('#field-doc-name-error').remove();
+
+						// Check value fields
+						if ($('#field-doc-name').val() != '') {
+							check = true;
+						}
+						else {
+							$('#label-field-doc-name').after('<span id="field-doc-name-error" style="color: red"> - missing value!</span>');
+						}
+
+						// true means the format can be sent
+						if (check) {
+							loading = '<img id="img-loading" src="http://www.webscriptlab.com/file/loading/output/133975532033.gif" alt="" />';
+							$('#doc-result-box').html(loading);
+						}
+					}
+
+					return check;
 				},
-				target:'#doc-result-box',
 				success:function (data) {
 					if (window.console) {
 						console.log(data);
 					}
+					$('#doc-result-box').html('<pre>' + data + '</pre>');
 				}
 			});
 		});
@@ -66,44 +89,40 @@
 
 <div id="doc-form-box">
 	<form id="doc-form" action="index.php" method="post" enctype="multipart/form-data">
-		<fieldset class="doc-fieldset">
+		<fieldset class="fieldset">
 			<legend></legend>
 			<div class="doc-box-field">
-				<label for="zip_file">Zip file (cf. <a href="#file_structure">File Structure</a>)</label> <br/>
-				<input id="zip_file" type="file" name="zip_file">
+				<label for="field-zip-file">Zip file (cf. <a href="#file_structure">File Structure</a>)</label> <br/>
+				<input id="field-zip-file" type="file" name="zip_file">
 			</div>
 			<div class="doc-box-field">
-				<label for="doc_name">Documentation name</label> <br/>
-				<input id="doc_name" type="text" name="doc_name" value="" placeholder="Documentation name"/>
+				<label for="field-doc-name" id="label-field-doc-name">Documentation name</label> <br/>
+				<input id="field-doc-name" type="text" name="doc_name" value="" placeholder="Documentation name"/>
 			</div>
 		</fieldset>
-		<fieldset class="doc-fieldset">
+		<fieldset class="fieldset">
 			<fieldset>
 				<legend>formats to convert</legend>
 				<div>
 					<input id="html" type="checkbox" name="html" value="1" checked/><label for="html">HTML</label>
-					<input id="pdf" type="checkbox" name="pdf" value="1"/><label for="pdf">PDF</label>
-					<input id="epub" type="checkbox" name="epub" value="1"/><label for="epub">ePub</label>
+					<input id="pdf" type="checkbox" name="pdf" value="1" disabled/><label for="pdf">PDF</label>
+					<input id="epub" type="checkbox" name="epub" value="1" disabled/><label for="epub">ePub</label>
 				</div>
 			</fieldset>
 			<fieldset>
 				<legend>Generate Zip archive</legend>
-				<input id="yes" type="radio" name="make_zip" value="1"><label for="yes">Yes</label>
+				<input id="yes" type="radio" name="make_zip" value="zip"><label for="yes">Yes</label>
 				<input id="no" type="radio" name="make_zip" value="0" checked><label for="no">No</label>
 			</fieldset>
 		</fieldset>
 		<fieldset style="clear: both">
-		<input type="submit" value="Upload"/>
+			<input type="submit" value="Upload"/>
 		</fieldset>
 	</form>
 </div>
-<div id="">
-<pre>
-	<div id="doc-result-box" />
+<div id="doc-result-box">
 
-</pre>
 </div>
-
 <h3 id="file_structure">File Structure</h3>
 
 <p>Please upload a zip archive containing all reST files and any additional images. E.g.,</p>

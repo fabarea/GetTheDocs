@@ -8,11 +8,6 @@ class ClientConvert {
 	/**
 	 * @var string
 	 */
-	protected $directory = '';
-
-	/**
-	 * @var string
-	 */
 	protected $manual = '';
 
 	/**
@@ -23,7 +18,7 @@ class ClientConvert {
 	/**
 	 * @var boolean
 	 */
-	protected $verbose = FALSE;
+	protected $debug = FALSE;
 
 	/**
 	 * The arguments from the console
@@ -43,8 +38,9 @@ class ClientConvert {
 		if (! empty($this->arguments[0])) {
 			$this->manual = $this->arguments[0];
 		}
-		if (!empty($this->arguments[1])) {
-			$this->directory = rtrim($this->arguments[1], '/');
+
+		if (isset($this->arguments['debug'])) {
+			$this->debug = TRUE;
 		}
 	}
 
@@ -60,6 +56,7 @@ class ClientConvert {
 		$data = array();
 		$data['action'] = 'convert';
 		$data['user_workspace'] = USER_WORKSPACE;
+		$data['debug'] = $this->debug;
 		$data['api_version'] = API_VERSION;
 		$files = array();
 		$files['manual'] = array(
@@ -68,13 +65,12 @@ class ClientConvert {
 		);
 
 		$content = Request::post(HOST, $data, $files);
-		print_r("$content");
-//		$result = file_put_contents("$this->directory/$this->file", $content);
-//
-//		if ($result === FALSE) {
-//			throw new Exception("Exception: file '$this->file' was not written");
-//		}
-		Console::output("File \"$this->file\" written");
+		Console::output($content);
+		#$result = file_put_contents("$this->directory/$this->file", $content);
+		#if ($result === FALSE) {
+		#	throw new Exception("Exception: file '$this->file' was not written");
+		#}
+		#Console::output("File \"$this->file\" written");
 	}
 
 	/**
@@ -83,11 +79,6 @@ class ClientConvert {
 	protected function checkEnvironment() {
 
 		// Test if directory given as input is correct
-
-		if (! is_dir($this->directory)) {
-			$this->displayError("directory does not exist! Make sure to give a valid path \"" . $this->directory . '"');
-		}
-
 		if (!is_file($this->manual)) {
 			$this->displayError("file does not exist! Make sure to point to a manual.sxw: \"$this->manual\"");
 		}
@@ -118,10 +109,9 @@ EOF;
 Convert legacy OpenOffice documentation to reST.
 
 Usage:
-	get-the-docs convert FILE PATH [OPTIONS]
+	get-the-docs convert FILE [OPTIONS]
 
-	FILE points to a manual.sxw
-	PATH is a directory where a ZIP file will be created containing the reST documentation
+	where "FILE" points to a manual.sxw
 
 Options:
 	-h, --help             Display this help message

@@ -10,13 +10,21 @@ class File {
 	 * @return void
 	 */
 	static public function removeDirectory($dir) {
-		foreach (glob($dir . '/*') as $file) {
-			if (is_dir($file))
-				self::removeDirectory($file);
-			else
-				unlink($file);
+
+		$command = "rm -rf $dir";
+		if (is_dir($dir)) {
+			exec($command);
 		}
-		rmdir($dir);
+		#foreach (glob($dir . '/*') as $file) {
+		#	if (is_dir($file))
+		#		self::removeDirectory($file);
+		#	else
+		#		$result = unlink($file);
+		#		if (! $result) {
+		#			throw new Exception("problem deleting file $file");
+		#		}
+		#}
+		#rmdir($dir);
 	}
 }
 

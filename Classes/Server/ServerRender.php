@@ -15,12 +15,32 @@ class ServerRender {
 	/**
 	 * @var string
 	 */
-	protected $userDirectory = '';
+	protected $userWorkspace = '';
 
 	/**
 	 * @var string
 	 */
-	protected $buildDirectory = '';
+	protected $userWorkspacePath = '';
+
+	/**
+	 * @var string
+	 */
+	protected $userWorkspacePathAbsolute = '';
+
+	/**
+	 * @var string
+	 */
+	protected $docWorkspace = '';
+
+	/**
+	 * @var string
+	 */
+	protected $docWorkspacePath = '';
+
+	/**
+	 * @var string
+	 */
+	protected $docWorkspacePathAbsolute = '';
 
 	/**
 	 * @var string
@@ -89,6 +109,21 @@ class ServerRender {
 	}
 
 	/**
+	 * Process the User request
+	 *
+	 * @return void
+	 */
+	public function process() {
+		$this->check();
+		$this->initialize();
+		$this->prepare();
+		$this->unPack();
+		$this->render();
+		$this->displayFeedback();
+		$this->cleanUp();
+	}
+
+	/**
 	 * Check that the value is correct
 	 *
 	 * @throws Exception
@@ -105,6 +140,10 @@ class ServerRender {
 
 		if ($this->parameters['doc_name'] == '') {
 			throw new Exception('missing doc_name parameter');
+		}
+
+		if ($this->parameters['doc_workspace'] == '') {
+			throw new Exception('missing doc_workspace parameter');
 		}
 	}
 
@@ -124,16 +163,18 @@ class ServerRender {
 		$this->extensionVersion = '1.0';
 
 		// Computes user workspace
-		$userWorkspace = !empty($this->parameters['user_workspace']) ? $this->parameters['user_workspace'] : 'cli';
-		$docWorkspace = !empty($this->parameters['doc_workspace']) ? $this->parameters['doc_workspace'] : 'undefined';
-
+		$this->userWorkspace = $this->parameters['user_workspace'];
+		$this->docWorkspace = $this->parameters['doc_workspace'];
 		#$identifier = str_shuffle(uniqid(TRUE)); // not used for now... possible random number
 
 		// Computes some needed properties
 		$this->homeDirectory = dirname($_SERVER['SCRIPT_FILENAME']);
-		$this->userDirectory = UPLOAD . "/$userWorkspace";
-		$this->uploadDirectory = UPLOAD . "/$userWorkspace/$docWorkspace";
-		$this->buildDirectory = FILES . "/$userWorkspace/$docWorkspace";
+		$this->uploadDirectory = "$this->homeDirectory/" . UPLOAD_DIRECTORY . "/$this->userWorkspace/$this->docWorkspace";
+		$this->userWorkspacePath = FILES_DIRECTORY . "/$this->userWorkspace";
+		$this->userWorkspacePathAbsolute = "$this->homeDirectory/$this->userWorkspacePath";
+		$this->docWorkspacePath = "$this->userWorkspacePath/$this->docWorkspace";
+		$this->docWorkspacePathAbsolute = "$this->userWorkspacePathAbsolute/$this->docWorkspace";
+
 		$this->warningsFile = "$this->uploadDirectory/Warnings.txt";
 		$this->url = 'http://' . $_SERVER['HTTP_HOST'] . str_replace('index.php', '', $_SERVER['PHP_SELF']);
 
@@ -152,21 +193,6 @@ class ServerRender {
 	}
 
 	/**
-	 * Process the User request
-	 *
-	 * @return void
-	 */
-	public function process() {
-		$this->check();
-		$this->initialize();
-		$this->prepare();
-		$this->unPack();
-		$this->render();
-		$this->displayFeedback();
-		#$this->cleanUp();
-	}
-
-	/**
 	 * Check that the value is correct
 	 *
 	 * @return void
@@ -181,21 +207,21 @@ class ServerRender {
 		file_put_contents($this->uploadDirectory . '/conf.py', $content);
 
 		$view = new Template('Resources/Private/Template/ServerRender/Makefile');
-		$view->set('buildDirectory', "$this->homeDirectory/$this->buildDirectory");
+		$view->set('buildDirectory', "$this->docWorkspacePathAbsolute");
 		$content = $view->fetch();
 		file_put_contents($this->uploadDirectory . '/Makefile', $content);
 
 		$commands = array();
 		// First clean directory
-		$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make clean --quiet;";
+		$commands[] = "cd $this->uploadDirectory; make clean --quiet;";
 
 		foreach ($this->formats as $format) {
-			$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make $format --quiet 2> Warnings.txt;";
+			$commands[] = "cd $this->uploadDirectory; make $format --quiet 2> Warnings.txt;";
 		}
-		$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make latex --quiet;";
+		$commands[] = "cd $this->uploadDirectory; make latex --quiet;";
 
 		if ($this->makeZip == 'zip') {
-			$commands[] = "cd $this->homeDirectory/$this->buildDirectory/..; zip -qr $this->fileName.zip $this->fileName";
+			$commands[] = "cd $this->docWorkspacePathAbsolute/..; zip -qr $this->docWorkspace.zip $this->docWorkspace";
 		}
 
 		Command::execute($commands);
@@ -208,7 +234,7 @@ class ServerRender {
 	 * @return void
 	 */
 	protected function prepare() {
-		$directories = array($this->uploadDirectory, $this->buildDirectory);
+		$directories = array($this->uploadDirectory, $this->docWorkspacePathAbsolute);
 		foreach ($directories as $directory) {
 			if (!is_dir($directory)) {
 				$result = mkdir($directory, 0755, TRUE);
@@ -244,7 +270,7 @@ class ServerRender {
 	 */
 	protected function cleanUp() {
 		// Remove directory
-		File::removeDirectory($this->userDirectory);
+		File::removeDirectory($this->uploadDirectory);
 	}
 
 	/**
@@ -258,28 +284,31 @@ class ServerRender {
 		foreach ($this->formats as $format) {
 			if ($format == 'html') {
 				$rendered .= "HTML docs:\n";
-				$rendered .= "$this->url$this->buildDirectory\n\n";
+				$rendered .= "$this->url$this->docWorkspacePath\n\n";
 			} elseif ($format == 'json') {
 				$rendered .= "JSON docs:\n";
-				$rendered .= "$this->url$this->buildDirectory/json\n\n";
+				$rendered .= "$this->url$this->docWorkspacePath/json\n\n";
 			} elseif ($format == 'gettext') {
 				$rendered .= "GetText docs:\n";
-				$rendered .= "$this->url$this->buildDirectory/local\n\n";
+				$rendered .= "$this->url$this->docWorkspacePath/local\n\n";
 			} elseif ($format == 'epub') {
 				$rendered .= "ePub docs:\n";
-				$rendered .= "$this->url$this->buildDirectory/epub\n\n";
+				$rendered .= "$this->url$this->docWorkspacePath/epub\n\n";
 			}
 		}
 
 		if ($this->makeZip == 'zip') {
 			$rendered .= "Zip file to download:\n";
-			$rendered .= "$this->url$this->buildDirectory.zip\n\n";
+			$rendered .= "$this->url$this->docWorkspacePath.zip\n\n";
 		}
 
 		$warnings = '';
 		if (file_exists($this->warningsFile)) {
-			$warnings = "\nFollowing warnings have been detected:\n\n";
-			$warnings .= file_get_contents($this->warningsFile);
+			$content = trim(file_get_contents($this->warningsFile));
+			if ($content) {
+				$warnings = "\nFollowing warnings have been detected:\n\n";
+				$warnings .= file_get_contents($this->warningsFile);
+			}
 		}
 
 		$content = <<< EOF
@@ -289,7 +318,7 @@ Notice, generated files are automatically removed after a grace period!
 $warnings
 EOF;
 
-		Server::output($content);
+		Output::write($content);
 	}
 }
 

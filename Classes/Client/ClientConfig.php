@@ -59,7 +59,11 @@ class ClientConfig {
 
 		foreach ($this->files as $file) {
 			$data['file'] = $file;
-			$content = Request::post(HOST, $data);
+			$content = trim(Request::post(HOST, $data));
+
+			if (!$content) {
+				throw new Exception("Exception: content empty for '$file'");
+			}
 
 			$result = file_put_contents("$this->directory/$file", $content);
 			if ($result === FALSE) {

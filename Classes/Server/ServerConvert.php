@@ -10,38 +10,38 @@ class ServerConvert {
 	/**
 	 * @var string
 	 */
+	protected $uploadDirectoryShortPath = '';
+
+	/**
+	 * @var string
+	 */
 	protected $zipFile = '';
-//
-//	/**
-//	 * @var string
-//	 */
-//	protected $homeDirectory = '';
-//
-//	/**
-//	 * @var string
-//	 */
-//	protected $userDirectory = '';
-//
-//	/**
-//	 * @var string
-//	 */
-//	protected $buildDirectory = '';
-//
-//	/**
-//	 * @var string
-//	 */
-//	protected $fileName = '';
-//
-//	/**
-//	 * @var string
-//	 */
-//	protected $url = '';
-//
-//	/**
-//	 * @var string
-//	 */
-//	protected $archive = '';
-//
+
+	/**
+	 * @var string
+	 */
+	protected $userWorkspace = '';
+
+	/**
+	 * @var string
+	 */
+	protected $docWorkspace = 'manual';
+
+	/**
+	 * @var string
+	 */
+	protected $homeDirectory = '';
+
+	/**
+	 * @var string
+	 */
+	protected $url = '';
+
+	/**
+	 * @var string
+	 */
+	protected $manualFile = '';
+
 	/**
 	 * @var array
 	 */
@@ -67,6 +67,21 @@ class ServerConvert {
 	}
 
 	/**
+	 * Process the User request
+	 *
+	 * @return void
+	 */
+	public function process() {
+		$this->check();
+		$this->initialize();
+		$this->prepare();
+		$this->handleUpload();
+		$this->render();
+		$this->displayFeedback();
+		$this->cleanUp();
+	}
+
+	/**
 	 * Check values are correct
 	 *
 	 * @throws Exception
@@ -77,7 +92,7 @@ class ServerConvert {
 			throw new Exception('missing file manual');
 		}
 		if ($this->parameters['user_workspace'] == '') {
-			throw new Exception('incomplete data');
+			throw new Exception('missing user_workspace parameter');
 		}
 	}
 
@@ -87,51 +102,17 @@ class ServerConvert {
 	 * @return void
 	 */
 	 protected  function initialize() {
-		$this->uploadDirectory = UPLOAD . "/{$this->parameters['user_workspace']}/tmp";
 
-//		// Configuration
-//
-//		// Get file name value without extension
-//		$fileNameWithExtension = $_FILES['archive']['name'];
-//		$fileInfo = pathinfo($fileNameWithExtension);
-//		$this->fileName = $fileInfo['filename'];
-//
-//		// Get user workspace
-//		$username = !empty($_POST['user_workspace']) ? $_POST['user_workspace'] : '';
-//
-//		#$identifier = str_shuffle(uniqid(TRUE)); // not used for now... possible random number
-//
-//		// Computes property
-//		$this->homeDirectory = dirname($_SERVER['SCRIPT_FILENAME']);
-//		$this->userDirectory = "$uploadDirectory/$username";
-//		$this->buildDirectory = "$filesDirectory/$username/$this->fileName";
-//		$this->url = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-//
-//		// Define rendered formats
-//		$formats = explode(',', $_POST['format']);
-//		foreach ($formats as $format) {
-//			if (in_array($format, array('html', 'json', 'gettext'))) {
-//				$this->formats[] = $format;
-//			}
-//		}
-//		// Define whether to zip
-//		if ($_POST['archive'] == 'zip') {
-//			$this->archive = 'zip';
-//		}
-	}
+		 $this->userWorkspace = $this->parameters['user_workspace'];
+		 $this->homeDirectory = dirname($_SERVER['SCRIPT_FILENAME']);
+		 $this->uploadDirectory = "$this->homeDirectory/" . UPLOAD_DIRECTORY . "/$this->userWorkspace/$this->docWorkspace";
+		 $this->uploadDirectoryShortPath = $this->uploadDirectory; // temp variable while Martin's refactoring
+		 $this->uploadDirectory .= "/Documentation/_not_versioned/_genesis"; // temp variable while Martin's refactoring
 
-	/**
-	 * Process the User request
-	 *
-	 * @return void
-	 */
-	public function process() {
-		$this->check();
-		$this->initialize();
-		$this->prepare();
-		$this->render();
-//		$this->displayFeedback();
-//		$this->cleanUp();
+		 $this->zipFile = FILES_DIRECTORY . "/$this->userWorkspace/Documentation.zip";
+
+		 $this->manualFile = "$this->uploadDirectory/manual.sxw";
+		 $this->url = 'http://' . $_SERVER['HTTP_HOST'] . str_replace('index.php', '', $_SERVER['PHP_SELF']);
 	}
 
 	/**
@@ -140,32 +121,36 @@ class ServerConvert {
 	 * @return void
 	 */
 	protected function render() {
+		$toolsHome = "/home/render/Resources/Private/RestTools/RenderOfficialDocsFirsttime";
 
-//		// Generate configuration files
-//		$view = new Template('Resources/Template/conf.py');
-//		$view->set('version', $this->extensionVersion);
-//		$view->set('extensionName', $this->extensionName);
-//		$content = $view->fetch();
-//		file_put_contents($this->uploadDirectory . '/conf.py', $content);
-//
-//		$view = new Template('Resources/Template/Makefile');
-//		$view->set('buildDirectory', "$this->homeDirectory/$this->buildDirectory");
-//		$content = $view->fetch();
-//		file_put_contents($this->uploadDirectory . '/Makefile', $content);
-//
-//		$commands = array();
-//		// First clean directory
-//		$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make clean --quiet;";
-//
-//		foreach ($this->formats as $format) {
-//			$commands[] = "cd $this->homeDirectory/$this->uploadDirectory; make $format --quiet;";
-//		}
-//
-//		if ($this->archive == 'zip') {
-//			$commands[] = "cd $this->homeDirectory/$this->buildDirectory/..; zip -qr $this->fileName.zip $this->fileName";
-//		}
-//
-//		Command::execute($commands);
+
+		$commands = array();
+
+		// Manual commands
+		#$commands[] = "cd $this->uploadDirectory; python $toolsHome/documentconverter.py manual.sxw manual.html";
+		#$commands[] = "cd $this->uploadDirectory; python $toolsHome/copyclean.py manual.html manual-cleaned.html";
+		#$commands[] = "cd $this->uploadDirectory; tidy -asxhtml -utf8 -f errorfile.txt -o manual-tidy.html manual-cleaned.html";
+		#$commands[] = "cd $this->uploadDirectory; python $toolsHome/ooxhtml2rst.py manual-tidy.html manual.rst";
+		#$commands[] = "cd $this->uploadDirectory; python $toolsHome/normalize_empty_lines.py  manual.rst  temp.rst";
+		#$commands[] = "cd $this->uploadDirectory; cp temp.rst manual.rst";
+
+		// Below temporary code while Martin Bless is refactoring its script
+		// Generate a command file
+		$content = <<<EOF
+files = [
+      '$this->manualFile'
+]
+EOF;
+		$targetFile = $toolsHome . '/list_of_sxw_manuals.py';
+		file_put_contents($targetFile, $content);
+
+		$commands = array();
+		$commands[] = "python $toolsHome/1_do_the_work.py > /dev/null";
+		$commands[] = "mv $this->uploadDirectoryShortPath/Documentation/source $this->uploadDirectoryShortPath/Documentation/Documentation";
+		$commands[] = "cd $this->uploadDirectoryShortPath/Documentation; zip -qr Documentation.zip Documentation";
+		$commands[] = "mv $this->uploadDirectoryShortPath/Documentation/Documentation.zip $this->zipFile";
+
+		Command::execute($commands);
 	}
 
 	/**
@@ -185,28 +170,19 @@ class ServerConvert {
 				}
 			}
 		}
-
-		// Move file
-		$result = move_uploaded_file($this->file['tmp_name'], "$this->uploadDirectory/manual.sxw");
-		if (!$result) {
-			throw new Exception('File not uploaded correctly');
-		}
 	}
 
 	/**
-	 * Unzip archive
+	 * Move uploaded file to the right directory
 	 *
 	 * @throws Exception
 	 * @return void
 	 */
-	protected function unPack() {
-		$zip = new \ZipArchive();
-		$res = $zip->open($_FILES['zip_file']['tmp_name']);
-		if ($res === TRUE) {
-			$zip->extractTo($this->uploadDirectory);
-			$zip->close();
-		} else {
-			throw new Exception('Exception: something when wrong with the zip file');
+	protected function handleUpload() {
+		// Move file
+		$result = move_uploaded_file($this->file['tmp_name'], "$this->manualFile");
+		if (!$result) {
+			throw new Exception('File not uploaded correctly');
 		}
 	}
 
@@ -217,7 +193,7 @@ class ServerConvert {
 	 */
 	protected function cleanUp() {
 		// Remove directory
-		File::removeDirectory($this->userDirectory);
+		File::removeDirectory($this->uploadDirectoryShortPath);
 	}
 
 	/**
@@ -227,36 +203,15 @@ class ServerConvert {
 	 */
 	protected function displayFeedback() {
 
-		$rendered = '';
-		foreach ($this->formats as $format) {
-			if ($format == 'html') {
-				$rendered .= "HTML documentation:\n";
-				$rendered .= "$this->url$this->buildDirectory\n\n";
-			} elseif ($format == 'json') {
-				$rendered .= "JSON documentation:\n";
-				$rendered .= "$this->url$this->buildDirectory/json\n\n";
-			} elseif ($format == 'gettext') {
-				$rendered .= "GetText documentation:\n";
-				$rendered .= "$this->url$this->buildDirectory/local\n\n";
-			}
-		}
-
-		if ($this->zipFile == 'zip') {
-			$rendered .= "Zip file to download:\n";
-			$rendered .= "$this->url$this->buildDirectory.zip\n\n";
-		}
-
-		$warnings = '';
-		if (file_exists($this->warningsFile)) {
-			$warnings = "Following warnings have been detected:\n";
-			$warnings .= file_get_contents($this->warningsFile);
-		}
-
 		$content = <<< EOF
 
-$rendered
-Notice, the docs is kept on-line for a limited time (few days)!
-$warnings
+manual.sxw has been converted to reST and is available for download.
+
+$this->url$this->zipFile
+
+The automatic conversion is not perfect though and some manual work might be needed.
+
+Notice, generated files are automatically removed after a grace period!
 EOF;
 
 		print $content;

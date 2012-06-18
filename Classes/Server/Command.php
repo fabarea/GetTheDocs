@@ -30,7 +30,7 @@ class Command {
 
 			foreach ($commands as $command) {
 				if (self::$dryRun) {
-					self::output($command);
+					Output::write($command);
 				} else {
 					system($command, $result);
 				}

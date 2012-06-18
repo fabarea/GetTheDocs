@@ -36,13 +36,25 @@ class ServerConfig {
 	public function __construct($parameters) {
 		$this->parameters = $parameters;
 	}
+
+	/**
+	 * Process the User request
+	 *
+	 * @return void
+	 */
+	public function process() {
+		$this->check();
+		$this->initialize();
+		$this->render();
+	}
+
 	/**
 	 * Check that the value is correct
 	 *
 	 * @throws Exception
 	 * @return void
 	 */
-	public function check() {
+	protected  function check() {
 		if (!in_array($this->parameters['file'], $this->possibleFiles)) {
 			throw new Exception("Exception: unknown file request \"{$this->parameters['file']}\"");
 		}
@@ -61,17 +73,6 @@ class ServerConfig {
 	}
 
 	/**
-	 * Process the User request
-	 *
-	 * @return void
-	 */
-	protected function process() {
-		$this->check();
-		$this->initialize();
-		$this->render();
-	}
-
-	/**
 	 * Check that the value is correct
 	 *
 	 * @return void
@@ -85,8 +86,7 @@ class ServerConfig {
 			$view->set('version', $this->extensionVersion);
 			$view->set('extensionName', $this->extensionName);
 		}
-		$content = $view->fetch();
-		print $content;
+		Output::write($view->fetch());
 	}
 }
 
