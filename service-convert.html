@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="de" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8">
+	<title>get.typo3.org</title>
+	<style type="text/css">
+		html, body {
+		}
+
+		fieldset {
+			border: 0 solid #000000;
+		}
+
+		.doc-box-field {
+			margin-bottom: 10px;
+		}
+
+		.doc-box-field input {
+			width: 250px;
+		}
+
+		#doc-form-box {
+			background-color: #ECECEC;
+			width: 500px;
+		}
+
+		#doc-result-box {
+			background-color: #f0f0f0;
+			margin-top: 10px;
+		}
+
+		.fieldset {
+			float: left;
+		}
+	</style>
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.js"></script>
+	<script src="http://malsup.github.com/jquery.form.js"></script>
+
+	<script>
+		// wait for the DOM to be loaded
+		$(document).ready(function () {
+
+			// bind 'doc-form' submit
+			$('#doc-form').ajaxForm({
+				beforeSubmit:function () {
+					var loading, check;
+
+					check = false;
+
+					// Prevent double submission
+					if ($('#img-loading').length == 0) {
+
+						// Clean up GUI, first
+						$('#field-doc-name-error').remove();
+
+						// Check value fields
+						if ($('#field-doc-name').val() != '') {
+							check = true;
+						}
+						else {
+							$('#label-field-doc-name').after('<span id="field-doc-name-error" style="color: red"> - missing value!</span>');
+						}
+
+						// true means the format can be sent
+						if (check) {
+							loading = '<div style="font-weight: bold"><img id="img-loading" src="http://www.webscriptlab.com/file/loading/output/133975532033.gif" alt="" />'
+							loading += '<span style="position:relative; bottom: 18px; left: 10px">Operation can take a little while...</span></div>';
+							$('#doc-result-box').html(loading);
+						}
+					}
+
+					return check;
+				},
+				success:function (data) {
+					if (window.console) {
+						console.log(data);
+					}
+					$('#doc-result-box').html('<pre>' + data + '</pre>');
+				}
+			});
+		});
+	</script>
+</head>
+<body style="width: 800px">
+
+<h2>Convert legacy manual.sxw</h2>
+
+<p>Use this form to upload a manual.sxw and grab a ZIP archive containing the reST files.</p>
+
+<div id="doc-form-box">
+	<form id="doc-form" action="index.php" method="post" enctype="multipart/form-data">
+		<fieldset class="fieldset">
+			<legend></legend>
+			<div class="doc-box-field">
+				<label for="field-zip-file">manual.sxw file</label> <br/>
+				<input id="field-zip-file" type="file" name="manual">
+			</div>
+		</fieldset>
+		<fieldset style="clear: both">
+			<input type="hidden" name="action" value="convert"/>
+			<input type="submit" value="Upload"/>
+		</fieldset>
+	</form>
+</div>
+<div id="doc-result-box">
+
+</div>
+
+
+</body>
+
+</html>

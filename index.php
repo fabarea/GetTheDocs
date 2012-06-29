@@ -40,7 +40,7 @@ EOF;
 
 	Output::$format = 'text';
 
-} elseif (!empty($_FILES['zip_file'])) {
+} elseif (! empty($_FILES)) {
 
 	// computes format
 	$outputs = array();
@@ -71,9 +71,12 @@ EOF;
 	$docWorkspace = str_replace($searches, '_', $parameters['doc_name']);
 	$docWorkspace = strtolower($docWorkspace);
 
-	$parameters['action'] = 'render';
+	$parameters['action'] = $dirtyParameters['action'];
 	$parameters['doc_workspace'] = $docWorkspace;
 	$parameters['user_workspace'] = 'web';
+	if ($parameters['action'] == 'convert') {
+		$parameters['user_workspace'] = str_shuffle(uniqid(TRUE));
+	}
 	$parameters['format'] = implode(',', $outputs);
 	$parameters['debug'] = 0;
 	$doProcess = TRUE;

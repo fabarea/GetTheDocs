@@ -115,6 +115,7 @@ Usage:
 
 Options:
 	-h, --help             Display this help message
+
 EOF;
 		Console::output($message);
 		die();

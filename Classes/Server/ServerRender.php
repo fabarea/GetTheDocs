@@ -165,7 +165,6 @@ class ServerRender {
 		// Computes user workspace
 		$this->userWorkspace = $this->parameters['user_workspace'];
 		$this->docWorkspace = $this->parameters['doc_workspace'];
-		#$identifier = str_shuffle(uniqid(TRUE)); // not used for now... possible random number
 
 		// Computes some needed properties
 		$this->homeDirectory = dirname($_SERVER['SCRIPT_FILENAME']);
@@ -316,6 +315,7 @@ class ServerRender {
 $rendered
 Notice, generated files are automatically removed after a grace period!
 $warnings
+
 EOF;
 
 		Output::write($content);

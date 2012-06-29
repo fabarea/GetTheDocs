@@ -25,6 +25,11 @@ class ServerConvert {
 	/**
 	 * @var string
 	 */
+	protected $userWorkspacePath = '';
+
+	/**
+	 * @var string
+	 */
 	protected $docWorkspace = 'manual';
 
 	/**
@@ -104,12 +109,13 @@ class ServerConvert {
 	 protected  function initialize() {
 
 		 $this->userWorkspace = $this->parameters['user_workspace'];
+		 $this->userWorkspacePath = FILES_DIRECTORY . "/$this->userWorkspace";
+		 $this->zipFile = "$this->userWorkspacePath/Documentation.zip";
+
 		 $this->homeDirectory = dirname($_SERVER['SCRIPT_FILENAME']);
 		 $this->uploadDirectory = "$this->homeDirectory/" . UPLOAD_DIRECTORY . "/$this->userWorkspace/$this->docWorkspace";
-		 $this->uploadDirectoryShortPath = $this->uploadDirectory; // temp variable while Martin's refactoring
-		 $this->uploadDirectory .= "/Documentation/_not_versioned/_genesis"; // temp variable while Martin's refactoring
-
-		 $this->zipFile = FILES_DIRECTORY . "/$this->userWorkspace/Documentation.zip";
+		 $this->uploadDirectoryShortPath = $this->uploadDirectory;
+		 $this->uploadDirectory .= "/Documentation/_not_versioned/_genesis"; // the conversion script is coded to have this path
 
 		 $this->manualFile = "$this->uploadDirectory/manual.sxw";
 		 $this->url = 'http://' . $_SERVER['HTTP_HOST'] . str_replace('index.php', '', $_SERVER['PHP_SELF']);
@@ -123,10 +129,7 @@ class ServerConvert {
 	protected function render() {
 		$toolsHome = "/home/render/Resources/Private/RestTools/RenderOfficialDocsFirsttime";
 
-
-		$commands = array();
-
-		// Manual commands
+		// Old (manual) commands
 		#$commands[] = "cd $this->uploadDirectory; python $toolsHome/documentconverter.py manual.sxw manual.html";
 		#$commands[] = "cd $this->uploadDirectory; python $toolsHome/copyclean.py manual.html manual-cleaned.html";
 		#$commands[] = "cd $this->uploadDirectory; tidy -asxhtml -utf8 -f errorfile.txt -o manual-tidy.html manual-cleaned.html";
@@ -134,21 +137,11 @@ class ServerConvert {
 		#$commands[] = "cd $this->uploadDirectory; python $toolsHome/normalize_empty_lines.py  manual.rst  temp.rst";
 		#$commands[] = "cd $this->uploadDirectory; cp temp.rst manual.rst";
 
-		// Below temporary code while Martin Bless is refactoring its script
-		// Generate a command file
-		$content = <<<EOF
-files = [
-      '$this->manualFile'
-]
-EOF;
-		$targetFile = $toolsHome . '/list_of_sxw_manuals.py';
-		file_put_contents($targetFile, $content);
-
 		$commands = array();
-		$commands[] = "python $toolsHome/1_do_the_work.py > /dev/null";
-		$commands[] = "mv $this->uploadDirectoryShortPath/Documentation/source $this->uploadDirectoryShortPath/Documentation/Documentation";
-		$commands[] = "cd $this->uploadDirectoryShortPath/Documentation; zip -qr Documentation.zip Documentation";
-		$commands[] = "mv $this->uploadDirectoryShortPath/Documentation/Documentation.zip $this->zipFile";
+		$commands[] = "cd $this->uploadDirectoryShortPath; python $toolsHome/1_do_the_work.py Documentation/_not_versioned/_genesis/manual.sxw > /dev/null";
+		$commands[] = "cd $this->uploadDirectoryShortPath; rm -rf Documentation/_*";
+		$commands[] = "cd $this->uploadDirectoryShortPath/; zip -qr Documentation.zip Documentation";
+		$commands[] = "mv $this->uploadDirectoryShortPath/Documentation.zip $this->zipFile";
 
 		Command::execute($commands);
 	}
@@ -160,10 +153,10 @@ EOF;
 	 * @return void
 	 */
 	protected function prepare() {
-		$directories = array($this->uploadDirectory);
+		$directories = array($this->uploadDirectory, $this->userWorkspacePath);
 		foreach ($directories as $directory) {
 			if (!is_dir($directory)) {
-				$result = mkdir($directory, 0755, TRUE);
+				$result = mkdir($directory, 0775, TRUE);
 
 				if ($result === FALSE) {
 					throw new Exception('Exception: directory not created on the server "' . $directory . '"');
@@ -179,6 +172,11 @@ EOF;
 	 * @return void
 	 */
 	protected function handleUpload() {
+		// remove file first if exists
+		if ($this->manualFile) {
+			unlink($this->manualFile);
+		}
+
 		// Move file
 		$result = move_uploaded_file($this->file['tmp_name'], "$this->manualFile");
 		if (!$result) {
@@ -212,9 +210,10 @@ $this->url$this->zipFile
 The automatic conversion is not perfect though and some manual work might be needed.
 
 Notice, generated files are automatically removed after a grace period!
+
 EOF;
 
-		print $content;
+		Output::write($content);
 	}
 }
 

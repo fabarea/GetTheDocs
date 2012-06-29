@@ -64,7 +64,8 @@
 
 						// true means the format can be sent
 						if (check) {
-							loading = '<img id="img-loading" src="http://www.webscriptlab.com/file/loading/output/133975532033.gif" alt="" />';
+							loading = '<div style="font-weight: bold"><img id="img-loading" src="http://www.webscriptlab.com/file/loading/output/133975532033.gif" alt="" />'
+							loading += '<span style="position:relative; bottom: 18px; left: 10px">Operation can take a little while...</span></div>';
 							$('#doc-result-box').html(loading);
 						}
 					}
@@ -81,9 +82,9 @@
 		});
 	</script>
 </head>
-<body style="width: 700px">
+<body style="width: 800px">
 
-<h2>Web form to convert documentation</h2>
+<h2>Render docs on-line</h2>
 
 <p>Use this form to upload a Zip containing reST files.</p>
 
@@ -116,6 +117,7 @@
 			</fieldset>
 		</fieldset>
 		<fieldset style="clear: both">
+			<input type="hidden" name="action" value="render"/>
 			<input type="submit" value="Upload"/>
 		</fieldset>
 	</form>
@@ -125,11 +127,12 @@
 </div>
 <h3 id="file_structure">File Structure</h3>
 
-<p>Please upload a zip archive containing all reST files and any additional images. E.g.,</p>
+<p>Upload a zip archive containing all reST files and any additional images. E.g.,</p>
 <pre>
 Documentation.zip
-|-- Index.rst
-`-- Images
+|-- Documentation
+    |-- Index.rst
+    `-- Images
 </pre>
 
 

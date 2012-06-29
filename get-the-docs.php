@@ -7,8 +7,10 @@
  * @todo: add license + ...
  *                                                                        */
 
-// @todo code an HTML version for http://preview.docs.typo3.org/getthedocs
-// @todo add some conversation with the User to generate a file containing the information below
+if (! class_exists('ZipArchive')) {
+	$message = "\nMissing PHP ZipArchive Class. Try to install \"php5-zip\" package.\n";
+	die($message);
+}
 
 $userWorkspace = 'anonymous';
 if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN' && exec('whoami') !== '') {

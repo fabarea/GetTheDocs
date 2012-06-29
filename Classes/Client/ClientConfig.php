@@ -141,6 +141,7 @@ Usage:
 Options:
 	-f, --force            Overwrite files without asking
 	-h, --help             Display this help message
+
 EOF;
 		Console::output($message);
 		die();

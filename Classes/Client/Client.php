@@ -49,6 +49,7 @@ Usage:
 	get-the-docs convert    Convert legacy OpenOffice documentation to reST
 	get-the-docs config     Download configuration for local rendering (Working but still missing features...)
 	get-the-docs help       Print this help
+
 EOF;
 		print $usage;
 		die();

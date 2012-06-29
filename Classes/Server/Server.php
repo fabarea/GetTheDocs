@@ -32,6 +32,7 @@ class Server {
 			default:
 				$message = <<< EOF
 I don't know action: "$action". API problem?
+
 EOF;
 				print $message;
 				die();
